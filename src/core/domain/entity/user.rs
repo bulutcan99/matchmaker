@@ -50,6 +50,21 @@ impl User {
 		}
 	}
 
+   pub fn new_super_admin (name: String, email:String, password_hash:String) -> Self{
+        User{
+            id:None,
+            name,
+            surname,
+            email,
+            password_hash,
+            role::Role::SuperAdmin,
+            created_at: DateService::get_current_timestamp(),
+            updated_at: DateService::get_current_timestamp(),
+        }
+
+    } 
+
+
 	pub fn update(&mut self, name: Option<String>, surname: Option<String>, email: Option<String>, password_hash: Option<String>) -> Result<(),Err()>{
 		if let Some(password_hash) = password_hash {
 			self.password_hash = password_hash;
