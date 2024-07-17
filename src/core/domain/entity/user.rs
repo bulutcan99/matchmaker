@@ -1,17 +1,11 @@
 use crate::core::domain::valueobject::date::DateService;
+use crate::core::domain::valueobject::role::Role;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use surrealdb::sql::Id;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-enum Role {
-    SuperAdmin,
-    Admin,
-    User,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-struct User {
+pub(crate) struct User {
     pub id: Option<Id>,
     pub name: String,
     pub surname: String,
@@ -56,9 +50,14 @@ impl User {
         password_hash: String,
     ) -> Self {
         User {
+            id: None,
             name,
+            surname,
             email,
+            role: Role::SuperAdmin,
             password_hash,
+            created_at: DateService::get_current_timestamp(),
+            updated_at: DateService::get_current_timestamp(),
         }
     }
 
