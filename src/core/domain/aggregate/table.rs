@@ -1,5 +1,5 @@
 use surrealdb::sql::Id;
-use crate::core::domain::aggregate::user::UserAggregate;
+use crate::core::domain::aggregate::user_profile::UserAggregate;
 
 pub struct Table{
 	id: Option<Id>,

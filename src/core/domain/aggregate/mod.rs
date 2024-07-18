@@ -1,3 +1,3 @@
-pub mod company;
+pub mod company_detail;
 pub mod table;
-pub mod user;
+pub mod user_profile;
