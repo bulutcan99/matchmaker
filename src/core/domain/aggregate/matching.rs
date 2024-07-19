@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use rand::seq::SliceRandom;
+use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::domain::aggregate::user_profile::UserProfile;
@@ -59,21 +60,25 @@ impl Table {
 	}
 }
 
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Hall {
 	admin: UserProfile,
 	tables: HashMap<u8, Table>,
 	users: Vec<UserProfile>,
 	last_match_time: Instant,
+	end_time: Instant,
 }
 
 impl Hall {
 	pub fn new(admin: UserProfile) -> Self {
+		let now = Instant::now();
 		Hall {
 			admin,
 			tables: HashMap::new(),
 			users: Vec::new(),
-			last_match_time: Instant::now(),
+			last_match_time: now,
+			end_time: now + Duration::from_secs(300), // 5 min
 		}
 	}
 
@@ -85,8 +90,8 @@ impl Hall {
 		self.tables.insert(id, Table::new(id));
 	}
 
-	pub fn start_matching(&mut self) {
-		let mut rng = rand::thread_rng();
+	pub fn start_matching(&mut self) -> HashMap<u8, Table> {
+		let mut rng = thread_rng();
 		let mut users = self.users.clone();
 		users.shuffle(&mut rng);
 
@@ -102,11 +107,21 @@ impl Hall {
 			}
 		}
 		self.last_match_time = Instant::now();
+		self.tables.clone()
 	}
 
 	pub fn check_and_update(&mut self) {
-		if Instant::now().duration_since(self.last_match_time) >= Duration::from_secs(120) {
-			self.start_matching(); // Start matching again if 2 minutes have passed
+		let now = Instant::now();
+		if now.duration_since(self.last_match_time) >= Duration::from_secs(120) {
+			if now < self.end_time {
+				self.start_matching(); // Start matching again if 2 minutes have passed
+			} else {
+				self.time_is_up()
+			}
 		}
+	}
+
+	pub fn time_is_up(&self) {
+		println!("Time is up. Thanks for coming.")
 	}
 }
