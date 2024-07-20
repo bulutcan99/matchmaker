@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::core::domain::aggregate::table::Table;
 use crate::core::domain::aggregate::worker::Worker;
 
+//todo: masalara oturma logic'i daha temiz ve dusunulerek ilerlenicek
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Hall {
 	tables: HashMap<u8, Table>,
