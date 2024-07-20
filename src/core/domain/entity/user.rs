@@ -3,14 +3,13 @@ use std::fmt::Display;
 use anyhow::Error;
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Id;
 
 use crate::core::domain::valueobject::date::DateService;
 use crate::core::domain::valueobject::role::Role;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct User {
-	pub id: Option<Id>,
+	pub id: Option<u16>,
 	pub name: String,
 	pub surname: String,
 	pub email: String,
@@ -21,9 +20,9 @@ pub struct User {
 }
 
 impl User {
-	pub fn new_user(name: String, surname: String, email: String, password_hash: String) -> Self {
+	pub fn new_user(id: Option<u16>, name: String, surname: String, email: String, password_hash: String) -> Self {
 		User {
-			id: Some(Id::ulid()),
+			id,
 			name,
 			surname,
 			email,
@@ -34,9 +33,9 @@ impl User {
 		}
 	}
 
-	pub fn new_admin(name: String, surname: String, email: String, password_hash: String) -> Self {
+	pub fn new_admin(id: Option<u16>, name: String, surname: String, email: String, password_hash: String) -> Self {
 		User {
-			id: None,
+			id,
 			name,
 			surname,
 			email,

@@ -22,8 +22,12 @@ impl Table {
 		worker.sit_table(self.id);
 		if self.worker1.is_none() {
 			self.worker1 = Some(worker);
+			println!("Worker1 set");
 		} else if self.worker2.is_none() {
 			self.worker2 = Some(worker);
+			println!("Worker2 set");
+		} else {
+			println!("No more workers can be added to this table.");
 		}
 	}
 
@@ -46,5 +50,9 @@ impl Table {
 		let worker2_str = Self::worker_to_string(&self.worker2);
 
 		println!("{} and {} are sharing qr", worker1_str, worker2_str);
+	}
+	
+	pub fn is_full(&self) -> bool {
+		self.worker1.is_some() && self.worker2.is_some()
 	}
 }

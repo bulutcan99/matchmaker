@@ -1,12 +1,12 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Id;
+use surrealdb::sql::Thing;
 
 use crate::core::domain::valueobject::sector::Sector;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Company {
-	pub id: Option<Id>,
+	pub id: Option<Thing>,
 	pub name: String,
 	pub description: String,
 	pub sector: Sector,

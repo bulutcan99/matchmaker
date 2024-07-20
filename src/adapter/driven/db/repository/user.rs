@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use anyhow::Error;
 use async_trait::async_trait;
+use config::ConfigError::NotFound;
 use surrealdb::engine::remote::ws::Client;
-use surrealdb::sql::Id;
+use surrealdb::sql::Thing;
 use surrealdb::Surreal;
 
 use crate::config::Settings;
@@ -28,40 +29,30 @@ impl UserRepository
 
 #[async_trait]
 impl Storage<User> for UserRepository {
-	async fn find_by_id(&self, id: Id) -> Option<User> {
-		match self.db.select((&self.table, id)).await {
-			Ok(Some(record)) => Some(record),
-			Ok(None) => None,
-			Err(_) => None,
+	async fn find_by_id(&self, id: Thing) -> Result<User, Error> {
+		match self.db.select((&self.table, id)).await? {
+			Some(record) => Ok(record),
+			None => Err(Error::from(NotFound("User".to_string()))),
 		}
 	}
 
 	async fn find_all(&self) -> Result<Vec<User>, Error> {
-		match self.db.select(&self.table).await {
-			Ok(records) => Ok(records),
-			Err(e) => Err(e.into()),
-		}
+		let record = self.db.select(&self.table).await?;
+		Ok(record)
 	}
 
-	async fn save(&self, user: &User) -> Result<(), Error> {
-		match self.db.insert(&self.table).content(user).await {
-			Ok(_) => Ok(()),
-			Err(e) => Err(e.into()),
-		}
+	async fn save(&self, user: User) -> Result<Vec<User>, Error> {
+		let record = self.db.insert(&self.table).content(user).await?;
+		Ok(record)
 	}
 
-	async fn update(&self, user: &User) -> Result<User, Error> {
-		match self.db.update((&self.table, &user.id)).content(user).await {
-			Ok(Some(updated_record)) => Ok(updated_record),
-			Ok(None) => Err(Error::NotFound),
-			Err(e) => Err(e.into()),
-		}
+	async fn update(&self, id: Thing, user: User) -> Result<User, Error> {
+		let record = self.db.update((&self.table, id)).content(user).await?.unwrap();
+		Ok(record)
 	}
 
-	async fn delete_by_id(&self, id: Id) -> Result<(), Error> {
-		match self.db.delete((&self.table, id)).await {
-			Ok(_) => Ok(()),
-			Err(e) => Err(e.into()),
-		}
+	async fn delete_by_id(&self, id: Thing) -> Result<(), Error> {
+		let result = self.db.delete((&self.table, id)).await?.unwrap();
+		Ok(result)
 	}
 }
