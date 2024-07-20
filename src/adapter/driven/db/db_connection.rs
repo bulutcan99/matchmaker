@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use async_trait::async_trait;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::Surreal;
@@ -12,7 +11,6 @@ pub struct DB {
 	pub client: Arc<Surreal<Client>>,
 }
 
-#[async_trait]
 impl DB {
 	fn new() -> Self {
 		DB {

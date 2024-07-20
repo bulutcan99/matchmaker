@@ -17,7 +17,7 @@ pub struct UserRepository {
 
 impl UserRepository
 {
-	pub fn new(config: &Settings, db: T) -> Self {
+	pub fn new(config: &Settings, db: Arc<Surreal<Client>>) -> Self {
 		let table_name = config.database.user_table.as_deref().unwrap_or("user");
 		UserRepository {
 			table: table_name.to_string(),
@@ -27,33 +27,41 @@ impl UserRepository
 }
 
 #[async_trait]
-impl Storage<User> for UserRepository
-{
-	async fn find_by_id(&self, id: Id) -> Result<User, Error> {
-		if let Some(record) = self.db.select((&self.table, id)).await? {
-			return Ok(record);
+impl Storage<User> for UserRepository {
+	async fn find_by_id(&self, id: Id) -> Option<User> {
+		match self.db.select((&self.table, id)).await {
+			Ok(Some(record)) => Some(record),
+			Ok(None) => None,
+			Err(_) => None,
 		}
-
-		Err(Error::msg(format!("User with id {} not found", id)))
 	}
 
 	async fn find_all(&self) -> Result<Vec<User>, Error> {
-		let records = self.db.select(&self.table).await?;
-		Ok(records)
+		match self.db.select(&self.table).await {
+			Ok(records) => Ok(records),
+			Err(e) => Err(e.into()),
+		}
 	}
 
 	async fn save(&self, user: &User) -> Result<(), Error> {
-		self.db.insert(&self.table).content(user).await?;
-		Ok(())
+		match self.db.insert(&self.table).content(user).await {
+			Ok(_) => Ok(()),
+			Err(e) => Err(e.into()),
+		}
 	}
 
 	async fn update(&self, user: &User) -> Result<User, Error> {
-		let updated_record = self.db.update((&self.table, &user.id)).content(user).await?;
-		Ok(updated_record.unwrap())
+		match self.db.update((&self.table, &user.id)).content(user).await {
+			Ok(Some(updated_record)) => Ok(updated_record),
+			Ok(None) => Err(Error::NotFound),
+			Err(e) => Err(e.into()),
+		}
 	}
 
 	async fn delete_by_id(&self, id: Id) -> Result<(), Error> {
-		self.db.delete((&self.table, id)).await?;
-		Ok(())
+		match self.db.delete((&self.table, id)).await {
+			Ok(_) => Ok(()),
+			Err(e) => Err(e.into()),
+		}
 	}
 }
