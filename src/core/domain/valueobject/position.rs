@@ -6,7 +6,6 @@ pub enum Position {
 	Manager,
 	WhiteCollar,
 	BlueCollar,
-	Worker,
 }
 
 
