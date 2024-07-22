@@ -1,8 +1,20 @@
-version: "3.8"
-
-##services:
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    container_name: surrealdb
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - SURREAL_AUTH_ENABLED=true
+      - SURREAL_AUTH_USERNAME=root
+      - SURREAL_AUTH_PASSWORD=root
+    volumes:
+      - surrealdb_data:/data
 
 networks:
   common-network:
-    name: common-network
     driver: bridge
+
+volumes:
+  surrealdb_data:  # Define data volume

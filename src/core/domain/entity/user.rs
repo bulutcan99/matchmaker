@@ -1,26 +1,25 @@
-use std::fmt::Display;
-
 use anyhow::Error;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Uuid;
 
-use crate::core::domain::valueobject::date::DateService;
 use crate::core::domain::valueobject::role::Role;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct User {
-	pub id: Option<u16>,
+	#[serde(rename = "id")]
+	pub id: Option<Uuid>,
 	pub name: String,
 	pub surname: String,
 	pub email: String,
 	pub role: Role,
 	pub password_hash: String,
-	pub created_at: DateTime<Local>,
-	pub updated_at: DateTime<Local>,
+	pub created_at: DateTime<Utc>,
+	pub updated_at: DateTime<Utc>,
 }
 
 impl User {
-	pub fn new_user(id: Option<u16>, name: String, surname: String, email: String, password_hash: String) -> Self {
+	pub fn new_user(id: Option<Uuid>, name: String, surname: String, email: String, password_hash: String) -> Self {
 		User {
 			id,
 			name,
@@ -28,12 +27,12 @@ impl User {
 			email,
 			password_hash,
 			role: Role::User,
-			created_at: DateService::get_current_timestamp(),
-			updated_at: DateService::get_current_timestamp(),
+			created_at: Utc::now(),
+			updated_at: Utc::now(),
 		}
 	}
 
-	pub fn new_admin(id: Option<u16>, name: String, surname: String, email: String, password_hash: String) -> Self {
+	pub fn new_admin(id: Option<Uuid>, name: String, surname: String, email: String, password_hash: String) -> Self {
 		User {
 			id,
 			name,
@@ -41,8 +40,8 @@ impl User {
 			email,
 			password_hash,
 			role: Role::Admin,
-			created_at: DateService::get_current_timestamp(),
-			updated_at: DateService::get_current_timestamp(),
+			created_at: Utc::now(),
+			updated_at: Utc::now(),
 		}
 	}
 
@@ -65,7 +64,7 @@ impl User {
 		if let Some(email) = email {
 			self.email = email;
 		}
-		self.updated_at = DateService::get_current_timestamp();
+		self.updated_at = Utc::now();
 
 		Ok(())
 	}

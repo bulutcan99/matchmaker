@@ -11,6 +11,7 @@ use crate::config::Settings;
 use crate::core::domain::entity::user::User;
 use crate::core::port::storage::Storage;
 
+//sqlx and psg will integrate instead of surreal
 pub struct UserRepository {
 	table: String,
 	db: Arc<Surreal<Client>>,
@@ -41,8 +42,8 @@ impl Storage<User> for UserRepository {
 		Ok(record)
 	}
 
-	async fn save(&self, user: User) -> Result<Vec<User>, Error> {
-		let record = self.db.insert(&self.table).content(user).await?;
+	async fn save(&self, user: User) -> Result<User, Error> {
+		let record: Option<User> = self.db.insert(&self.table, &user.name).content(user).await?;
 		Ok(record)
 	}
 

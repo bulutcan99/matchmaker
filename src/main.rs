@@ -1,11 +1,27 @@
-use std::time::Duration;
-
-use matchmaker::core::domain::aggregate::hall::Hall;
-use matchmaker::core::domain::aggregate::worker::Worker;
 use matchmaker::core::domain::entity::user::User;
+use matchmaker::core::port::storage::Storage;
+use matchmaker::di::Container;
 
-fn main() {
-	let mut hall = Hall::new();
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
+	let container = Container::new().await?;
+
+	let admin_user = User::new_admin(
+		None,
+		String::from("John"),
+		String::from("Doe"),
+		"john.doe@example.com".to_string(),
+		"securepasswordhash".to_string(),
+	);
+
+	container.user_repository.save(admin_user).await?;
+
+	Ok(())
+}
+
+//usecase scenario
+/*
+let mut hall = Hall::new();
 
 	let admin_user = User::new_admin(
 		Some(0),
@@ -80,4 +96,4 @@ fn main() {
 		hall.check_and_update();
 		std::thread::sleep(Duration::from_secs(10));
 	}
-}
+ */

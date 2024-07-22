@@ -1,2 +1,2 @@
 pub mod user;
-mod company;
+pub mod company;

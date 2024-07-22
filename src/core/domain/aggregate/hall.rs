@@ -1,8 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 
 use crate::core::domain::aggregate::table::Table;
@@ -45,6 +43,8 @@ impl Hall {
 	pub fn get_tables(&self) -> HashMap<u8, Table> {
 		self.tables.clone()
 	}
+
+	/*
 	pub fn start_matching(&mut self) -> Option<HashMap<u8, Table>> {
 		use SliceRandom;
 		use thread_rng;
@@ -84,7 +84,6 @@ impl Hall {
 		self.last_match_time = SystemTime::now();
 		Some(self.tables.clone())
 	}
-
 	pub fn check_and_update(&mut self) {
 		let now = SystemTime::now();
 		if self.break_time {
@@ -112,4 +111,5 @@ impl Hall {
 	fn time_is_up(&self) {
 		println!("Time is up. Thanks for coming.");
 	}
+	*/
 }
