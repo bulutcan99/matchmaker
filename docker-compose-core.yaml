@@ -1,20 +1,23 @@
 services:
-  surrealdb:
-    image: surrealdb/surrealdb:latest
-    container_name: surrealdb
+  postgres:
+    image: postgres:latest
+    container_name: matchmaker-postgres
     restart: always
     ports:
-      - "8000:8000"
+      - "5432:5432"
     environment:
-      - SURREAL_AUTH_ENABLED=true
-      - SURREAL_AUTH_USERNAME=root
-      - SURREAL_AUTH_PASSWORD=root
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: matchmaker
     volumes:
-      - surrealdb_data:/data
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - common-network
 
 networks:
   common-network:
     driver: bridge
 
 volumes:
-  surrealdb_data:  # Define data volume
+  postgres_data:
+    driver: local

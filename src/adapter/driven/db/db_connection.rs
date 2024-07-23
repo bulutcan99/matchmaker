@@ -1,41 +1,27 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use surrealdb::engine::remote::ws::{Client, Ws};
-use surrealdb::opt::auth::Root;
-use surrealdb::Surreal;
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
 use crate::config::Settings;
 
+#[derive(Debug, Clone)]
 pub struct DB {
-	pub client: Arc<Surreal<Client>>,
+	pub pool: Arc<Pool<Postgres>>,
+	config: &'static Settings,
 }
+
 impl DB {
-	pub fn new() -> Self {
-		DB {
-			client: Arc::new(Surreal::init()),
-		}
-	}
+	pub async fn new(config: &Settings) -> Result<Self, Error> {
+		let url = config.database.url.as_deref().unwrap_or("localhost:5432");
+		let max_conn = config.database.max_conn.unwrap_or(10) as u32;
+		let pool = PgPoolOptions::new()
+			.max_connections(max_conn)
+			.connect(url).await?;
 
-	pub async fn connect(&self, config: &Settings) -> Result<(), Error> {
-		let url = config.database.url.as_deref().unwrap_or("localhost:8000");
-		let username = config.database.username.as_deref().unwrap_or("root");
-		let password = config.database.password.as_deref().unwrap_or("root");
-		let ns = config.database.db_name.as_deref().unwrap_or("matchmaker");
-		let db_name = config.database.db_name.as_deref().unwrap_or("matchmaker");
-
-		self.client.connect::<Ws>(url).with_capacity(10).await?;
-		self.client.signin(Root {
-			username,
-			password,
-		}).await?;
-
-		self.client.use_ns(ns).use_db(db_name).await?;
-		Ok(())
-	}
-
-	pub async fn disconnect(&self) -> Result<(), Error> {
-		// implement disconnect logic if necessary
-		Ok(())
+		Ok(DB {
+			pool: Arc::new(pool),
+			config,
+		})
 	}
 }

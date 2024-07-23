@@ -7,11 +7,7 @@ use serde::Deserialize;
 #[allow(unused)]
 pub struct Database {
 	pub url: Option<String>,
-	pub username: Option<String>,
-	pub password: Option<String>,
-	pub db_name: Option<String>,
-	pub user_table: Option<String>,
-	pub company_table: Option<String>,
+	pub max_conn: Option<u8>,
 }
 
 #[derive(Debug, Deserialize)]

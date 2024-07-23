@@ -1,13 +1,13 @@
 use anyhow::Error;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Uuid;
+use uuid::Uuid;
 
+use crate::core::domain::valueobject::date::DateService;
 use crate::core::domain::valueobject::role::Role;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct User {
-	#[serde(rename = "id")]
 	pub id: Option<Uuid>,
 	pub name: String,
 	pub surname: String,
@@ -19,7 +19,7 @@ pub struct User {
 }
 
 impl User {
-	pub fn new_user(id: Option<Uuid>, name: String, surname: String, email: String, password_hash: String) -> Self {
+	pub fn new_user(name: String, surname: String, email: String, password_hash: String) -> Self {
 		User {
 			id,
 			name,
@@ -27,12 +27,12 @@ impl User {
 			email,
 			password_hash,
 			role: Role::User,
-			created_at: Utc::now(),
-			updated_at: Utc::now(),
+			created_at: DateService::get_current_timestamp_utc(),
+			updated_at: DateService::get_current_timestamp_utc(),
 		}
 	}
 
-	pub fn new_admin(id: Option<Uuid>, name: String, surname: String, email: String, password_hash: String) -> Self {
+	pub fn new_admin(name: String, surname: String, email: String, password_hash: String) -> Self {
 		User {
 			id,
 			name,
@@ -40,8 +40,8 @@ impl User {
 			email,
 			password_hash,
 			role: Role::Admin,
-			created_at: Utc::now(),
-			updated_at: Utc::now(),
+			created_at: DateService::get_current_timestamp_utc(),
+			updated_at: DateService::get_current_timestamp_utc(),
 		}
 	}
 

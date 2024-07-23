@@ -1,8 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub enum Sector{
+pub enum Sector {
 	Digital,
 	Marketing,
 	Advertisement,
+	Software,
+	AI,
+	Business,
+	Music,
 }

@@ -7,7 +7,6 @@ async fn main() -> Result<(), anyhow::Error> {
 	let container = Container::new().await?;
 
 	let admin_user = User::new_admin(
-		None,
 		String::from("John"),
 		String::from("Doe"),
 		"john.doe@example.com".to_string(),

@@ -2,58 +2,95 @@ use std::sync::Arc;
 
 use anyhow::Error;
 use async_trait::async_trait;
-use config::ConfigError::NotFound;
-use surrealdb::engine::remote::ws::Client;
-use surrealdb::sql::Thing;
-use surrealdb::Surreal;
+use sqlx::{Pool, Postgres};
+use uuid::Uuid;
 
-use crate::config::Settings;
 use crate::core::domain::entity::user::User;
 use crate::core::port::storage::Storage;
 
-//sqlx and psg will integrate instead of surreal
 pub struct UserRepository {
-	table: String,
-	db: Arc<Surreal<Client>>,
+	db: Arc<Pool<Postgres>>,
 }
 
-impl UserRepository
-{
-	pub fn new(config: &Settings, db: Arc<Surreal<Client>>) -> Self {
-		let table_name = config.database.user_table.as_deref().unwrap_or("user");
-		UserRepository {
-			table: table_name.to_string(),
-			db,
-		}
+impl UserRepository {
+	pub fn new(db: Arc<Pool<Postgres>>) -> Self {
+		UserRepository { db }
 	}
 }
 
 #[async_trait]
 impl Storage<User> for UserRepository {
-	async fn find_by_id(&self, id: Thing) -> Result<User, Error> {
-		match self.db.select((&self.table, id)).await? {
-			Some(record) => Ok(record),
-			None => Err(Error::from(NotFound("User".to_string()))),
-		}
+	async fn find_by_id(&self, id: Uuid) -> Result<User, Error> {
+		let found_user = sqlx::query_as!(
+            User,
+            r#"
+                SELECT * FROM users WHERE id = $1
+            "#,
+            id
+        )
+			.fetch_optional(&*self.db)
+			.await?;
+
+		found_user.ok_or_else(|| Error::msg("User not found"))
 	}
 
 	async fn find_all(&self) -> Result<Vec<User>, Error> {
-		let record = self.db.select(&self.table).await?;
-		Ok(record)
+		let users = sqlx::query_as!(
+            User,
+            r#"
+                SELECT * FROM users
+            "#
+        )
+			.fetch_all(&*self.db)
+			.await?;
+
+		Ok(users)
 	}
 
 	async fn save(&self, user: User) -> Result<User, Error> {
-		let record: Option<User> = self.db.insert(&self.table, &user.name).content(user).await?;
-		Ok(record)
+		let saved_user = sqlx::query_as!(
+            User,
+            r#"
+                INSERT INTO users (id, name, email) VALUES ($1, $2, $3)
+                RETURNING id, name, email
+            "#,
+            user.id,
+            user.name,
+            user.email
+        )
+			.fetch_one(&*self.db)
+			.await?;
+
+		Ok(saved_user)
 	}
 
-	async fn update(&self, id: Thing, user: User) -> Result<User, Error> {
-		let record = self.db.update((&self.table, id)).content(user).await?.unwrap();
-		Ok(record)
+	async fn update(&self, id: Uuid, user: User) -> Result<User, Error> {
+		let updated_user = sqlx::query_as!(
+            User,
+            r#"
+                UPDATE users SET name = $2, email = $3 WHERE id = $1
+                RETURNING id, name, email
+            "#,
+            id,
+            user.name,
+            user.email
+        )
+			.fetch_one(&*self.db)
+			.await?;
+
+		Ok(updated_user)
 	}
 
-	async fn delete_by_id(&self, id: Thing) -> Result<(), Error> {
-		let result = self.db.delete((&self.table, id)).await?.unwrap();
-		Ok(result)
+	async fn delete_by_id(&self, id: Uuid) -> Result<(), Error> {
+		sqlx::query!(
+            r#"
+                DELETE FROM users WHERE id = $1
+            "#,
+            id
+        )
+			.execute(&*self.db)
+			.await?;
+
+		Ok(())
 	}
 }
