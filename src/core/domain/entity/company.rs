@@ -16,3 +16,8 @@ pub struct Company {
 	pub updated_at: DateTime<Local>,
 }
 
+impl Company {
+	pub fn get_sector_string(&self) -> &str {
+		self.sector.to_string()
+	}
+}

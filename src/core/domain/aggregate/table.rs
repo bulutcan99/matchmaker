@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::core::domain::aggregate::worker::Worker;
+use crate::core::domain::aggregate::employment::Worker;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Table {
@@ -51,7 +51,7 @@ impl Table {
 
 		println!("{} and {} are sharing qr", worker1_str, worker2_str);
 	}
-	
+
 	pub fn is_full(&self) -> bool {
 		self.worker1.is_some() && self.worker2.is_some()
 	}

@@ -6,6 +6,7 @@ use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
 use crate::core::domain::entity::user::User;
+use crate::core::domain::valueobject::date::DateService;
 use crate::core::port::storage::Storage;
 
 pub struct UserRepository {
@@ -24,24 +25,26 @@ impl Storage<User> for UserRepository {
 		let found_user = sqlx::query_as!(
             User,
             r#"
-                SELECT * FROM users WHERE id = $1
+                SELECT id, name, surname, email, role, password_hash, created_at, updated_at
+                FROM "user" WHERE id = $1
             "#,
             id
         )
-			.fetch_optional(&*self.db)
+			.fetch_one(&*self.db)
 			.await?;
 
-		found_user.ok_or_else(|| Error::msg("User not found"))
+		Ok(found_user)
 	}
 
 	async fn find_all(&self) -> Result<Vec<User>, Error> {
 		let users = sqlx::query_as!(
             User,
             r#"
-                SELECT * FROM users
+                SELECT id, name, surname, email, role, password_hash, created_at, updated_at
+                FROM "user"
             "#
         )
-			.fetch_all(&*self.db)
+			.fetch_all(&self.db)
 			.await?;
 
 		Ok(users)
@@ -51,31 +54,42 @@ impl Storage<User> for UserRepository {
 		let saved_user = sqlx::query_as!(
             User,
             r#"
-                INSERT INTO users (id, name, email) VALUES ($1, $2, $3)
-                RETURNING id, name, email
+                INSERT INTO "user" (id, name, surname, email, role, password_hash, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING id, name, surname, email, role, password_hash, created_at, updated_at
             "#,
             user.id,
             user.name,
-            user.email
+            user.surname,
+            user.email,
+            user.role.as_ref(),
+            user.password_hash,
+            DateService::convert_to_offset(user.created_at),
+            DateService::convert_to_offset(user.updated_at),
         )
-			.fetch_one(&*self.db)
+			.fetch_one(&self.db)
 			.await?;
 
 		Ok(saved_user)
 	}
-
 	async fn update(&self, id: Uuid, user: User) -> Result<User, Error> {
 		let updated_user = sqlx::query_as!(
             User,
             r#"
-                UPDATE users SET name = $2, email = $3 WHERE id = $1
-                RETURNING id, name, email
+                UPDATE "user"
+                SET name = $2, surname = $3, email = $4, role = $5, password_hash = $6, updated_at = $7
+                WHERE id = $1
+                RETURNING id, name, surname, email, role as "role: _", password_hash, created_at, updated_at
             "#,
             id,
             user.name,
-            user.email
+            user.surname,
+            user.email,
+            user.role.as_ref(),
+            user.password_hash,
+            DateService::convert_to_offset(user.updated_at),
         )
-			.fetch_one(&*self.db)
+			.fetch_one(&self.db)
 			.await?;
 
 		Ok(updated_user)
@@ -84,11 +98,12 @@ impl Storage<User> for UserRepository {
 	async fn delete_by_id(&self, id: Uuid) -> Result<(), Error> {
 		sqlx::query!(
             r#"
-                DELETE FROM users WHERE id = $1
+                DELETE FROM "user"
+                WHERE id = $1
             "#,
             id
         )
-			.execute(&*self.db)
+			.execute(&self.db)
 			.await?;
 
 		Ok(())

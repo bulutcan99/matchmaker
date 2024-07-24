@@ -1,11 +1,10 @@
 use anyhow::Error;
-use surrealdb::sql::Thing;
 
-use crate::core::domain::entity::user::User;
+use crate::core::application::usecase::user::dto::{AuthenticatedUserOutput, GetProfileInput, GetProfileOutput, UpdateUserPofileInput, UserLoginInput, UserRegisterInput};
 
-pub trait UserUseCase {
-	fn get_user(&self, id: Thing) -> Option<User>;
-	fn create_user(&self, user: &User) -> Result<(), Error>;
-	fn modify_user(&self, user: &User) -> Result<User, Error>;
-	fn remove_user(&self, id: Thing) -> Result<(), Error>;
+pub trait UserManagement: Send + Sync {
+	async fn register(&self, input: &UserRegisterInput) -> Result<AuthenticatedUserOutput, Error>;
+	async fn login(&self, input: &UserLoginInput) -> Result<AuthenticatedUserOutput, Error>;
+	async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error>;
+	async fn get_profile(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error>;
 }

@@ -1,5 +1,5 @@
 use anyhow::Error;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -14,8 +14,8 @@ pub struct User {
 	pub email: String,
 	pub role: Role,
 	pub password_hash: String,
-	pub created_at: DateTime<Utc>,
-	pub updated_at: DateTime<Utc>,
+	pub created_at: DateTime<Local>,
+	pub updated_at: DateTime<Local>,
 }
 
 impl User {
@@ -27,8 +27,8 @@ impl User {
 			email,
 			password_hash,
 			role: Role::User,
-			created_at: DateService::get_current_timestamp_utc(),
-			updated_at: DateService::get_current_timestamp_utc(),
+			created_at: DateService::get_current_timestamp(),
+			updated_at: DateService::get_current_timestamp(),
 		}
 	}
 
@@ -40,8 +40,8 @@ impl User {
 			email,
 			password_hash,
 			role: Role::Admin,
-			created_at: DateService::get_current_timestamp_utc(),
-			updated_at: DateService::get_current_timestamp_utc(),
+			created_at: DateService::get_current_timestamp(),
+			updated_at: DateService::get_current_timestamp(),
 		}
 	}
 
@@ -64,7 +64,7 @@ impl User {
 		if let Some(email) = email {
 			self.email = email;
 		}
-		self.updated_at = Utc::now();
+		self.updated_at = Local::now();
 
 		Ok(())
 	}
@@ -75,6 +75,10 @@ impl User {
 		}
 
 		Ok(())
+	}
+
+	pub fn get_role_string(&self) -> &str {
+		self.role.as_ref()
 	}
 }
 
