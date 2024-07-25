@@ -1,21 +1,36 @@
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
 
-pub struct DateService;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Timestamp {
+    datetime: DateTime<Utc>,
+}
 
-impl DateService {
-	pub fn get_current_timestamp_utc() -> DateTime<Utc> {
-		Local::now().to_utc()
-	}
+impl Timestamp {
+    pub fn new(datetime: DateTime<Utc>) -> Self {
+        Self { datetime }
+    }
 
-	pub fn get_current_timestamp() -> DateTime<Local> {
-		Local::now()
-	}
+    pub fn now_utc() -> Self {
+        Self {
+            datetime: Utc::now(),
+        }
+    }
 
-	pub fn convert_to_offset(datetime: DateTime<Local>) -> OffsetDateTime {
-		datetime.naive_utc()?
-			.and_time(datetime.time())
-			.unwrap()
-			.to_offset(Utc::now().offset().unwrap())
-	}
+    pub fn to_local(&self) -> DateTime<Local> {
+        self.datetime.with_timezone(&Local)
+    }
+
+    pub fn to_naive(&self) -> NaiveDateTime {
+        self.datetime.naive_utc()
+    }
+
+    pub fn convert_to_offset(&self) -> OffsetDateTime {
+        self.datetime
+            .naive_utc()?
+            .and_time(self.datetime.time())
+            .unwrap()
+            .to_offset(Utc::now().offset().unwrap())
+    }
 }

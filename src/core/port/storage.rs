@@ -3,10 +3,17 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 #[async_trait]
-pub trait Storage<T>: Send + Sync {
-	async fn find_by_id(&self, id: Uuid) -> Result<T, Error>;
-	async fn find_all(&self) -> Result<Vec<T>, Error>;
-	async fn save(&self, item: T) -> Result<Vec<T>, Error>;
-	async fn update(&self, id: Uuid, item: T) -> Result<T, Error>;
-	async fn delete_by_id(&self, id: Uuid) -> Result<(), Error>;
+pub trait Repo<Entity>
+where
+    Entity: Clone + Send + Sync,
+{
+    async fn find_by<F, Q>(&self, filter: F) -> Result<Option<Entity>, Error>
+    where
+        F: Fn(&Entity) -> Q,
+        Q: PartialEq;
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<Entity>, Error>;
+    async fn find_all(&self) -> Result<Vec<Entity>, Error>;
+    async fn save(&self, entity: Entity) -> Result<Entity, Error>;
+    async fn update(&self, id: Uuid, entity: Entity) -> Result<Entity, Error>;
+    async fn delete(&self, id: Uuid) -> Result<(), Error>;
 }

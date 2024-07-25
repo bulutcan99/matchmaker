@@ -113,3 +113,13 @@ docker-compose-stop:
 .PHONY: docker-dependency-start
 docker-dependency-start:
 	docker-compose -f docker-compose-core.yaml up -d
+
+
+
+#$ cargo install sqlx-cli
+#sqlx database create
+#sqlx database drop
+# sqlx migrate add -r <name>
+#sqlx migrate run
+#sqlx migrate revert
+#cargo sqlx prepare
