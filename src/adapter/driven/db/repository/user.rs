@@ -6,7 +6,7 @@ use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
 use crate::core::domain::entity::user::User;
-use crate::core::domain::valueobject::date::DateService;
+use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::port::storage::Repo;
 use crate::core::port::user::UserRepo;
 
@@ -22,7 +22,7 @@ impl UserRepository {
 
 #[async_trait]
 impl Repo<User> for UserRepository {
-    async fn find_by<F, Q>(&self, filter: F) -> Result<Option<User>, Self::Error>
+    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<User>, Error>
     where
         F: Fn(&User) -> Q,
         Q: PartialEq,
@@ -35,7 +35,7 @@ impl Repo<User> for UserRepository {
         Ok(filtered_user)
     }
 
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, Error> {
+    async fn find_by_id(&self, id: &Uuid) -> Result<Option<User>, Error> {
         sqlx::query_as!(
             User,
             r#"
@@ -62,7 +62,7 @@ impl Repo<User> for UserRepository {
         .map_err(|err| Error::from("Error from getting user by id"))
     }
 
-    async fn save(&self, user: User) -> Result<User, Error> {
+    async fn save(&self, user: &User) -> Result<User, Error> {
         let saved_user = sqlx::query_as!(
             User,
             r#"
@@ -76,8 +76,9 @@ impl Repo<User> for UserRepository {
             user.email,
             user.role.as_ref(),
             user.password_hash,
-            DateService::convert_to_offset(user.created_at),
-            DateService::convert_to_offset(user.updated_at),
+            Timestamp::now_utc().convert_to_offset(),
+            Timestamp::now_utc().convert_to_offset(),
+
         )
 			.fetch_one(&self.db)
 			.await?;
@@ -85,7 +86,7 @@ impl Repo<User> for UserRepository {
         Ok(saved_user)
     }
 
-    async fn update(&self, id: Uuid, user: User) -> Result<User, Error> {
+    async fn update(&self, id: Uuid, user: &User) -> Result<User, Error> {
         let updated_user = sqlx::query_as!(
         User,
         r#"
@@ -106,7 +107,7 @@ impl Repo<User> for UserRepository {
         user.email.as_deref(),
         user.role.as_ref(),
         user.password_hash.as_deref(),
-        DateService::convert_to_offset(user.updated_at)
+        Timestamp::now_utc().convert_to_offset(),
     )
     .fetch_one(&self.db)
     .await?;
@@ -114,7 +115,7 @@ impl Repo<User> for UserRepository {
         Ok(updated_user)
     }
 
-    async fn delete(&self, id: Uuid) -> Result<(), Error> {
+    async fn delete(&self, id: &Uuid) -> Result<(), Error> {
         sqlx::query!(
             r#"
                 DELETE FROM "user"
@@ -131,7 +132,7 @@ impl Repo<User> for UserRepository {
 
 #[async_trait]
 impl UserRepo for UserRepository {
-    async fn find_by_email(&self, email: String) -> Result<Option<User>, Error> {
+    async fn find_by_email(&self, email: &str) -> Result<Option<User>, Error> {
         sqlx::query_as!(
             User,
             r#"

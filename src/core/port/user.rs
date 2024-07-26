@@ -9,7 +9,7 @@ use crate::core::domain::entity::user::User;
 
 #[async_trait]
 pub trait UserRepo: Send + Sync {
-    async fn find_by_email(&self, email: String) -> Result<Option<User>, Error>;
+    async fn find_by_email(&self, email: &str) -> Result<Option<User>, Error>;
 }
 
 #[async_trait]

@@ -1,4 +1,7 @@
 use anyhow::Error;
+use argon2::{Parameter, Variant};
+use orion::prelude::*;
+use orion::pwhash::PasswordHash;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -12,26 +15,20 @@ pub struct User {
     pub surname: String,
     pub email: String,
     pub role: Role,
-    pub password_hash: String,
+    pub password_hash: PasswordHash,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
 
 impl User {
-    pub fn new(
-        name: String,
-        surname: String,
-        email: String,
-        password_hash: String,
-        role: Role,
-    ) -> Self {
+    pub fn new(name: String, surname: String, email: String, password: String, role: Role) -> Self {
         User {
             id,
             name,
             surname,
             email,
             role,
-            password_hash,
+            password_hash: password,
             created_at: Timestamp::now_utc(),
             updated_at: Timestamp::now_utc(),
         }
@@ -72,4 +69,12 @@ impl User {
     pub fn get_role_string(&self) -> &str {
         self.role.as_ref()
     }
+
+    pub fn password_to_hash(&mut self, pass: &str) {
+        let params = Parameter::new(Variant::Argon2id, 4, 32);
+
+        self.password_hash = hash
+    }
+
+    pub fn verify_password(&self) -> bool {}
 }

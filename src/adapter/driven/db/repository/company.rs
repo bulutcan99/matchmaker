@@ -6,7 +6,7 @@ use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
 use crate::core::domain::entity::company::Company;
-use crate::core::domain::valueobject::date::DateService;
+use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::port::company::CompanyRepo;
 use crate::core::port::storage::Repo;
 
@@ -21,7 +21,7 @@ impl CompanyRepository {
 }
 #[async_trait]
 impl Repo<Company> for CompanyRepository {
-    async fn find_by<F, Q>(&self, filter: F) -> Result<Option<Company>, Self::Error>
+    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Self::Error>
     where
         F: Fn(&Company) -> Q,
         Q: PartialEq,
@@ -34,7 +34,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(filtered_company)
     }
 
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Company>, Error> {
+    async fn find_by_id(&self, id: &Uuid) -> Result<Option<Company>, Error> {
         sqlx::query_as!(
             Company,
             r#"
@@ -62,7 +62,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(companies)
     }
 
-    async fn save(&self, company: Company) -> Result<Company, Error> {
+    async fn save(&self, company: &Company) -> Result<Company, Error> {
         let saved_company = sqlx::query_as!(
             Company,
             r#"
@@ -76,8 +76,8 @@ impl Repo<Company> for CompanyRepository {
             company.description,
             company.url,
             company.sector.to_string(),
-            DateService::convert_to_offset(company.created_at),
-            DateService::convert_to_offset(company.updated_at)
+            Timestamp::now_utc().convert_to_offset(),
+            Timestamp::now_utc().convert_to_offset(),
         )
 			.fetch_one(&self.db)
 			.await?;
@@ -85,7 +85,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(saved_company)
     }
 
-    async fn update(&self, id: Uuid, company: Company) -> Result<Company, Error> {
+    async fn update(&self, id: Uuid, company: &Company) -> Result<Company, Error> {
         let updated_company = sqlx::query_as!(
             Company,
             r#"
@@ -106,7 +106,7 @@ impl Repo<Company> for CompanyRepository {
             company.description.as_deref(),
             company.url.as_deref(),
             company.sector.as_deref(),
-            DateService::convert_to_offset(company.updated_at)
+            Timestamp::now_utc().convert_to_offset(),
         )
         .fetch_one(&self.db)
         .await?;
@@ -114,7 +114,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(updated_company)
     }
 
-    async fn delete(&self, id: Uuid) -> Result<(), Error> {
+    async fn delete(&self, id: &Uuid) -> Result<(), Error> {
         sqlx::query!(
             r#"
                 DELETE FROM company WHERE id = $1

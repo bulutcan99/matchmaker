@@ -1,11 +1,12 @@
 # VARIABLES
-BINARY_NAME := todo
+BINARY_NAME := matchmaker
 HTTP_MAIN_PACKAGE_PATH := src/http
-MIGRATION_FOLDER := src/migrations
-DB_URL := postgres://postgres:pass@localhost:5432/todo?sslmode=disable
+MIGRATION_FOLDER := migrations
+DB_URL := postgres://postgres:password@localhost:5432/matchmaker?sslmode=disable
 
 # DOCUMENTATION
 ## Database Documentation
+.PHONY: db-docs
 db-docs:
 	dbdocs build doc/db.dbml
 
@@ -114,12 +115,32 @@ docker-compose-stop:
 docker-dependency-start:
 	docker-compose -f docker-compose-core.yaml up -d
 
+# SQLx Operations
+.PHONY: sqlx-install
+sqlx-install:
+	cargo install sqlx-cli
 
+.PHONY: sqlx-db-create
+sqlx-db-create:
+	sqlx database create --database-url $(DB_URL)
 
-#$ cargo install sqlx-cli
-#sqlx database create
-#sqlx database drop
-# sqlx migrate add -r <name>
-#sqlx migrate run
-#sqlx migrate revert
-#cargo sqlx prepare
+.PHONY: sqlx-db-drop
+sqlx-db-drop:
+	sqlx database drop --database-url $(DB_URL)
+
+.PHONY: sqlx-migrate-add
+sqlx-migrate-add:
+	@echo "Usage: make sqlx-migrate-add NAME=<name>"
+	sqlx migrate add -r $(NAME) --source $(MIGRATION_FOLDER)
+
+.PHONY: sqlx-migrate-run
+sqlx-migrate-run:
+	sqlx migrate run --source $(MIGRATION_FOLDER) --database-url $(DB_URL)
+
+.PHONY: sqlx-migrate-revert
+sqlx-migrate-revert:
+	sqlx migrate revert --source $(MIGRATION_FOLDER) --database-url $(DB_URL)
+
+.PHONY: sqlx-prepare
+sqlx-prepare:
+	cargo sqlx prepare --database-url $(DB_URL)
