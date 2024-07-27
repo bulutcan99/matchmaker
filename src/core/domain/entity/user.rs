@@ -1,9 +1,12 @@
+use std::ptr::hash;
 use anyhow::Error;
+use argonautica::Hasher;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
 use argon2::{Parameter, Variant};
 use orion::prelude::*;
 use orion::pwhash::PasswordHash;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::domain::valueobject::role::Role;
@@ -71,9 +74,8 @@ impl User {
     }
 
     pub fn password_to_hash(&mut self, pass: &str) {
-        let params = Parameter::new(Variant::Argon2id, 4, 32);
-
-        self.password_hash = hash
+        let mut hasher = Hasher::default();
+        let hash = hasher.with_password(pass).with_password()
     }
 
     pub fn verify_password(&self) -> bool {}
