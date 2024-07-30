@@ -11,10 +11,11 @@ pub enum PasswordError {
     InvalidPassword,
 }
 impl HashedPassword {
-    pub fn new(password: &str, secret_key: &str) -> Result<Self, PasswordError> {
+    pub fn new(password: &str, email: &str, secret_key: &str) -> Result<Self, PasswordError> {
         let mut hasher = Hasher::default();
         let hashed_password = hasher
             .with_password(password)
+            .with_salt(&email)
             .with_secret_key(secret_key)
             .hash()
             .unwrap();
