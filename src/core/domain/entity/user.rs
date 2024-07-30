@@ -22,7 +22,7 @@ pub struct User {
 impl User {
     pub fn new(name: String, surname: String, email: String, password: String, role: Role) -> Self {
         //config static olacak her yerden erisilebilecek
-        let hashed_password = password::HashedPassword::new(password.as_str(), "asd");
+        let hashed_password = password::HashedPassword::new(password.as_str(), &email);
         User {
             id,
             name,

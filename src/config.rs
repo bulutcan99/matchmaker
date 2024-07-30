@@ -1,4 +1,5 @@
 use std::env;
+use std::sync::OnceLock;
 
 use ::config::{Config, ConfigError, Environment, File};
 use serde::Deserialize;
@@ -22,14 +23,15 @@ pub struct HTTP {
     pub port: Option<u16>,
 }
 
-#[derive(Debug, Deserialize)]
-#[allow(unused)]
+#[derive(Debug, Deserialize, Debug, Deserialize)]
 pub struct Settings {
     debug: bool,
     pub database: Database,
     pub password: Password,
     pub http: HTTP,
 }
+
+static SETTINGS: OnceLock<Settings> = OnceLock::new();
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
@@ -42,5 +44,16 @@ impl Settings {
             .add_source(Environment::with_prefix("app"))
             .build()?;
         s.try_deserialize()
+    }
+
+    pub fn init() -> Result<(), ConfigError> {
+        let settings = Settings::new()?;
+        SETTINGS
+            .set(settings)
+            .map_err(|_| ConfigError::Message("Settings already initialized".into()))
+    }
+
+    pub fn get() -> &'static Settings {
+        SETTINGS.get().expect("Settings not initialized")
     }
 }
