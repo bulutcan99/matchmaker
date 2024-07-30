@@ -35,7 +35,7 @@ impl Repo<User> for UserRepository {
         Ok(filtered_user)
     }
 
-    async fn find_by_id(&self, id: &Uuid) -> Result<Option<User>, Error> {
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, Error> {
         sqlx::query_as!(
             User,
             r#"
@@ -62,7 +62,7 @@ impl Repo<User> for UserRepository {
         .map_err(|err| Error::from("Error from getting user by id"))
     }
 
-    async fn save(&self, user: &User) -> Result<User, Error> {
+    async fn save(&self, user: User) -> Result<User, Error> {
         let saved_user = sqlx::query_as!(
             User,
             r#"
@@ -75,7 +75,7 @@ impl Repo<User> for UserRepository {
             user.surname,
             user.email,
             user.role.as_ref(),
-            user.password_hash,
+            user.password_hash.as_str(),
             Timestamp::now_utc().convert_to_offset(),
             Timestamp::now_utc().convert_to_offset(),
 
@@ -86,7 +86,7 @@ impl Repo<User> for UserRepository {
         Ok(saved_user)
     }
 
-    async fn update(&self, id: Uuid, user: &User) -> Result<User, Error> {
+    async fn update(&self, id: Uuid, user: User) -> Result<User, Error> {
         let updated_user = sqlx::query_as!(
         User,
         r#"
@@ -115,7 +115,7 @@ impl Repo<User> for UserRepository {
         Ok(updated_user)
     }
 
-    async fn delete(&self, id: &Uuid) -> Result<(), Error> {
+    async fn delete(&self, id: Uuid) -> Result<(), Error> {
         sqlx::query!(
             r#"
                 DELETE FROM "user"

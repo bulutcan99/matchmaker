@@ -21,10 +21,9 @@ pub struct User {
 
 impl User {
     pub fn new(name: String, surname: String, email: String, password: String, role: Role) -> Self {
-        //config static olacak her yerden erisilebilecek
         let hashed_password = password::HashedPassword::new(password.as_str(), &email);
         User {
-            id,
+            id: Some(Uuid::new_v4()),
             name,
             surname,
             email,
@@ -45,5 +44,9 @@ impl User {
 
     pub fn get_role_string(&self) -> &str {
         self.role.as_ref()
+    }
+
+    pub fn hashed_password_string(&self) -> &str {
+        self.password_hash.as_str()
     }
 }

@@ -23,7 +23,7 @@ pub struct HTTP {
     pub port: Option<u16>,
 }
 
-#[derive(Debug, Deserialize, Debug, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     debug: bool,
     pub database: Database,

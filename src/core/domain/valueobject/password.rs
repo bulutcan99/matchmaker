@@ -35,6 +35,10 @@ impl HashedPassword {
 
         Ok(result)
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
 
 fn get_secret_key() -> Option<&'static str> {

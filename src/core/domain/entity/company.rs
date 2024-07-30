@@ -25,7 +25,7 @@ impl Company {
         sector: Sector,
     ) -> Self {
         Company {
-            id,
+            id: Some(Uuid::new_v4()),
             name,
             foundation_date,
             description,

@@ -1,21 +1,20 @@
 use matchmaker::core::domain::entity::user::User;
-use matchmaker::core::port::storage::e;
+use matchmaker::core::domain::valueobject::role::Role;
+use matchmaker::core::port::storage::Repo;
 use matchmaker::di::Container;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let container = Container::new().await?;
 
-    let x = "John".into();
-
-    let admin_user = User::new_admin(
-        "Doe".to_string(),
-        "john.doe@example.com".to_string(),
-        "securepasswordhash".to_string(),
+    let user = User::new(
+        "Bulut".to_string(),
+        "Gocer".to_string(),
+        "bc@hotmail.com".to_string(),
+        "PASS1234_!".to_string(),
+        Role::User,
     );
-
-    container.user_repository.save(admin_user).await?;
-
+    container.user_repository.save(&user).await?;
     Ok(())
 }
 

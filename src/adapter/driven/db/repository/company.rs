@@ -21,7 +21,7 @@ impl CompanyRepository {
 }
 #[async_trait]
 impl Repo<Company> for CompanyRepository {
-    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Self::Error>
+    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Error>
     where
         F: Fn(&Company) -> Q,
         Q: PartialEq,
@@ -34,7 +34,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(filtered_company)
     }
 
-    async fn find_by_id(&self, id: &Uuid) -> Result<Option<Company>, Error> {
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<Company>, Error> {
         sqlx::query_as!(
             Company,
             r#"
@@ -62,7 +62,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(companies)
     }
 
-    async fn save(&self, company: &Company) -> Result<Company, Error> {
+    async fn save(&self, company: Company) -> Result<Company, Error> {
         let saved_company = sqlx::query_as!(
             Company,
             r#"
@@ -85,7 +85,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(saved_company)
     }
 
-    async fn update(&self, id: Uuid, company: &Company) -> Result<Company, Error> {
+    async fn update(&self, id: Uuid, company: Company) -> Result<Company, Error> {
         let updated_company = sqlx::query_as!(
             Company,
             r#"
@@ -114,7 +114,7 @@ impl Repo<Company> for CompanyRepository {
         Ok(updated_company)
     }
 
-    async fn delete(&self, id: &Uuid) -> Result<(), Error> {
+    async fn delete(&self, id: Uuid) -> Result<(), Error> {
         sqlx::query!(
             r#"
                 DELETE FROM company WHERE id = $1
