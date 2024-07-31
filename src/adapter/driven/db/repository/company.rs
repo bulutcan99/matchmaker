@@ -128,9 +128,10 @@ impl Repo<Company> for CompanyRepository {
     }
 }
 
+#[async_trait]
 impl CompanyRepo for CompanyRepository {
     async fn find_by_name(&self, name: &str) -> Result<Option<Company>, Error> {
-        sqlx::query_as!(
+        let found_company = sqlx::query_as!(
             Company,
             r#"
             SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
@@ -139,7 +140,7 @@ impl CompanyRepo for CompanyRepository {
             name
         )
         .fetch_optional(&self.db)
-        .await
-        .map_err(|err| Error::from("Error from getting company by name"))
+        .await?;
+        Ok(found_company)
     }
 }

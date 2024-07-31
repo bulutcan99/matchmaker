@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, name, surname, email, role, password_hash, created_at, updated_at\n                FROM \"user\" WHERE id = $1\n            ",
+  "query": "\n            SELECT id, name, surname, email, role, password_hash, created_at, updated_at\n            FROM \"user\" WHERE email = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -46,7 +46,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "6aac76e23515b82b3acac57e3f8b110af1d4deb890bafdeb8e4f9dc0737c4e0b"
+  "hash": "9cb28196ea6e2f7183ae70c7851eb4785a655e443799b688ebdafa8453962f52"
 }
