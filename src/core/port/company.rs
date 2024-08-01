@@ -7,7 +7,7 @@ use crate::core::domain::entity::company::Company;
 pub trait CompanyRepo: Send + Sync {
     async fn find_by_name(&self, name: &str) -> Result<Option<Company>, Error>;
 }
-//
+
 // #[async_trait]
 // pub trait CompanyManagement: Send + Sync {
 //     async fn register(&self, input: &None) -> Result<None, Error>;
