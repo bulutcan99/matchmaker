@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 #[async_trait]
-pub trait Repo<Entity>
+pub trait Repo<Entity>: Send + Sync
 where
     Entity: Clone + Send + Sync,
 {

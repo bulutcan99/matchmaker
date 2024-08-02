@@ -44,7 +44,7 @@ where
     K: Repo<User>,
     U: UserRepo,
 {
-    async fn register(&self, input: &UserRegisterInput) -> Result<&User, Error> {
+    async fn register(&self, input: &UserRegisterInput) -> Result<User, Error> {
         let found_user = self.user_repository.find_by_email(input.email.as_str());
         match found_user {
             Some(_) => Err(Error::from("This email already in use!")),
@@ -57,7 +57,7 @@ where
                     role::Role::User,
                 );
 
-                let registered_user = self.repo_user.save(&new_user)?;
+                let registered_user = self.repo_user.save(new_user)?;
                 Ok(registered_user)
             }
         }
