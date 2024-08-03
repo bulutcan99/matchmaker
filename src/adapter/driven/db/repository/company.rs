@@ -21,48 +21,7 @@ impl CompanyRepository {
 }
 #[async_trait]
 impl Repo<Company> for CompanyRepository {
-    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Error>
-    where
-        F: Fn(&Company) -> Q,
-        Q: PartialEq,
-    {
-        let companies = self.find_all().await?;
-        let filtered_company = companies
-            .into_iter()
-            .find(|company| filter(company) == filter(&companies[0]));
-
-        Ok(filtered_company)
-    }
-
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Company>, Error> {
-        sqlx::query_as!(
-            Company,
-            r#"
-        SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
-        FROM "company" WHERE id = $1
-    "#,
-            id
-        )
-        .fetch_optional(&self.db)
-        .await
-        .map_err(|err| Error::from("Error from getting company by id"))
-    }
-
-    async fn find_all(&self) -> Result<Vec<Company>, Error> {
-        let companies = sqlx::query_as!(
-            Company,
-            r#"
-                SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
-                FROM company
-            "#
-        )
-        .fetch_all(&self.db)
-        .await?;
-
-        Ok(companies)
-    }
-
-    async fn save(&self, company: Company) -> Result<Company, Error> {
+    async fn save(&self, company: &Company) -> Result<Company, Error> {
         let saved_company = sqlx::query_as!(
             Company,
             r#"
@@ -85,7 +44,8 @@ impl Repo<Company> for CompanyRepository {
         Ok(saved_company)
     }
 
-    async fn update(&self, id: Uuid, company: Company) -> Result<Company, Error> {
+    async fn update(&self, id_str: &str, company: &Company) -> Result<Company, Error> {
+        let id = Uuid::parse_str(id_str)?;
         let updated_company = sqlx::query_as!(
             Company,
             r#"
@@ -114,7 +74,8 @@ impl Repo<Company> for CompanyRepository {
         Ok(updated_company)
     }
 
-    async fn delete(&self, id: Uuid) -> Result<(), Error> {
+    async fn delete(&self, id_str: &str) -> Result<(), Error> {
+        let id = Uuid::parse_str(id_str)?;
         sqlx::query!(
             r#"
                 DELETE FROM company WHERE id = $1
@@ -125,6 +86,48 @@ impl Repo<Company> for CompanyRepository {
         .await?;
 
         Ok(())
+    }
+
+    async fn find_all(&self) -> Result<Vec<Company>, Error> {
+        let companies = sqlx::query_as!(
+            Company,
+            r#"
+                SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
+                FROM company
+            "#
+        )
+        .fetch_all(&self.db)
+        .await?;
+
+        Ok(companies)
+    }
+
+    async fn find_by_id(&self, id_str: &str) -> Result<Option<Company>, Error> {
+        let id = Uuid::parse_str(id_str)?;
+        sqlx::query_as!(
+            Company,
+            r#"
+        SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
+        FROM "company" WHERE id = $1
+    "#,
+            id
+        )
+        .fetch_optional(&self.db)
+        .await
+        .map_err(|err| Error::from("Error from getting company by id"))
+    }
+
+    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Error>
+    where
+        F: Fn(&Company) -> Q,
+        Q: PartialEq,
+    {
+        let companies = self.find_all().await?;
+        let filtered_company = companies
+            .into_iter()
+            .find(|company| filter(company) == filter(&companies[0]));
+
+        Ok(filtered_company)
     }
 }
 

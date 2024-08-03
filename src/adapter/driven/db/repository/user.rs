@@ -22,47 +22,7 @@ impl UserRepository {
 
 #[async_trait]
 impl Repo<User> for UserRepository {
-    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<User>, Error>
-    where
-        F: Fn(&User) -> Q,
-        Q: PartialEq,
-    {
-        let users = self.find_all().await?;
-        let filtered_user = users
-            .into_iter()
-            .find(|user| filter(user) == filter(&users[0]));
-
-        Ok(filtered_user)
-    }
-
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, Error> {
-        sqlx::query_as!(
-            User,
-            r#"
-        SELECT id, name, surname, email, role, password_hash, created_at, updated_at
-        FROM "user" WHERE id = $1
-    "#,
-            id
-        )
-        .fetch_optional(&self.db)
-        .await
-        .map_err(|err| Error::from("Error from getting user by id"))
-    }
-
-    async fn find_all(&self) -> Result<Vec<User>, Error> {
-        sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, name, surname, email, role, password_hash, created_at, updated_at
-            FROM "user"
-        "#
-        )
-        .fetch_all(&self.db)
-        .await
-        .map_err(|err| Error::from("Error from getting user by id"))
-    }
-
-    async fn save(&self, user: User) -> Result<User, Error> {
+    async fn save(&self, user: &User) -> Result<User, Error> {
         let saved_user = sqlx::query_as!(
             User,
             r#"
@@ -86,7 +46,8 @@ impl Repo<User> for UserRepository {
         Ok(saved_user)
     }
 
-    async fn update(&self, id: Uuid, user: User) -> Result<User, Error> {
+    async fn update(&self, id_str: &str, user: &User) -> Result<User, Error> {
+        let id = Uuid::parse_str(id_str)?;
         let updated_user = sqlx::query_as!(
         User,
         r#"
@@ -115,18 +76,62 @@ impl Repo<User> for UserRepository {
         Ok(updated_user)
     }
 
-    async fn delete(&self, id: Uuid) -> Result<(), Error> {
+    async fn delete(&self, id_str: &str) -> Result<(), Error> {
+        let id = Uuid::parse_str(id_str)?;
+
         sqlx::query!(
             r#"
-                DELETE FROM "user"
-                WHERE id = $1
-            "#,
+            DELETE FROM "user"
+            WHERE id = $1
+        "#,
             id
         )
         .execute(&self.db)
         .await?;
 
         Ok(())
+    }
+
+    async fn find_all(&self) -> Result<Vec<User>, Error> {
+        sqlx::query_as!(
+            User,
+            r#"
+            SELECT id, name, surname, email, role, password_hash, created_at, updated_at
+            FROM "user"
+        "#
+        )
+        .fetch_all(&self.db)
+        .await
+        .map_err(|err| Error::from("Error from getting user by id"))
+    }
+
+    async fn find_by_id(&self, id_str: &str) -> Result<Option<User>, Error> {
+        let id = Uuid::parse_str(id_str)?;
+
+        sqlx::query_as!(
+            User,
+            r#"
+        SELECT id, name, surname, email, role, password_hash, created_at, updated_at
+        FROM "user" WHERE id = $1
+    "#,
+            id
+        )
+        .fetch_optional(&self.db)
+        .await
+        .map_err(|err| Error::from("Error from getting user by id"))
+    }
+
+    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<User>, Error>
+    where
+        F: Fn(&User) -> Q,
+        Q: PartialEq,
+    {
+        let users = self.find_all().await?;
+        let filtered_user = users
+            .into_iter()
+            .find(|user| filter(user) == filter(&users[0]));
+
+        Ok(filtered_user)
     }
 }
 
