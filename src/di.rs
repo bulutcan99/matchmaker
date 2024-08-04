@@ -17,13 +17,12 @@ pub struct Container {
 impl Container {
     pub async fn new() -> Result<Self, Error> {
         Settings::init()?;
-        let db = DB::new();
-        // Initialize repositories
-        let user_repository = UserRepository::new(Arc::clone(&db));
-        let company_repository = CompanyRepository::new(Arc::clone(&db));
+        let db = DB::new().await?;
+        let user_repository = UserRepository::new(Arc::clone(&db.pool));
+        let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
 
         Ok(Container {
-            db,
+            db: Arc::clone(&db.pool),
             user_repository,
             company_repository,
         })
