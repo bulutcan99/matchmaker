@@ -27,10 +27,14 @@ impl Timestamp {
     }
 
     pub fn convert_to_offset(&self) -> OffsetDateTime {
-        self.datetime
-            .naive_utc()?
-            .and_time(self.datetime.time())
-            .unwrap()
-            .to_offset(Utc::now().offset().unwrap())
+        OffsetDateTime::from_unix_timestamp(self.datetime.timestamp()).unwrap()
+    }
+}
+
+impl From<OffsetDateTime> for Timestamp {
+    fn from(odt: OffsetDateTime) -> Self {
+        Self {
+            datetime: DateTime::<Utc>::from_naive_utc_and_offset(odt.date().naive_utc(), Utc),
+        }
     }
 }

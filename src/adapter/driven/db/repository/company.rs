@@ -38,7 +38,7 @@ impl Repo<Company> for CompanyRepository {
             Timestamp::now_utc().convert_to_offset(),
             Timestamp::now_utc().convert_to_offset(),
         )
-			.fetch_one(&self.db)
+			.fetch_one(&*self.db)
 			.await?;
 
         Ok(saved_company)
@@ -68,7 +68,7 @@ impl Repo<Company> for CompanyRepository {
             company.sector.as_deref(),
             Timestamp::now_utc().convert_to_offset(),
         )
-        .fetch_one(&self.db)
+        .fetch_one(&*self.db)
         .await?;
 
         Ok(updated_company)
@@ -82,7 +82,7 @@ impl Repo<Company> for CompanyRepository {
             "#,
             id
         )
-        .execute(&self.db)
+        .execute(&*self.db)
         .await?;
 
         Ok(())
@@ -96,7 +96,7 @@ impl Repo<Company> for CompanyRepository {
                 FROM company
             "#
         )
-        .fetch_all(&self.db)
+        .fetch_all(&*self.db)
         .await?;
 
         Ok(companies)
@@ -112,7 +112,7 @@ impl Repo<Company> for CompanyRepository {
     "#,
             id
         )
-        .fetch_optional(&self.db)
+        .fetch_optional(&*self.db)
         .await
         .map_err(|err| Error::from("Error from getting company by id"))
     }
@@ -142,7 +142,7 @@ impl CompanyRepo for CompanyRepository {
             "#,
             name
         )
-        .fetch_optional(&self.db)
+        .fetch_optional(&*self.db)
         .await?;
         Ok(found_company)
     }

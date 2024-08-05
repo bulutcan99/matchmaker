@@ -12,6 +12,7 @@ pub enum PasswordError {
     #[error("Invalid password")]
     InvalidPassword,
 }
+
 impl HashedPassword {
     pub fn new(password: &str, email: &str) -> Result<Self, PasswordError> {
         let mut hasher = Hasher::default();
@@ -36,8 +37,14 @@ impl HashedPassword {
         Ok(result)
     }
 
-    pub fn as_str(&self) -> &str {
-        &self.0
+    pub fn as_string(&self) -> String {
+        self.0.to_owned()
+    }
+}
+
+impl From<String> for HashedPassword {
+    fn from(s: String) -> Self {
+        HashedPassword(s)
     }
 }
 

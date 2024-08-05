@@ -34,13 +34,13 @@ impl Repo<User> for UserRepository {
             user.name,
             user.surname,
             user.email,
-            user.role.as_ref(),
-            user.password_hash.as_str(),
+            user.role.as_string(),
+            user.password_hash.as_string(),
             Timestamp::now_utc().convert_to_offset(),
             Timestamp::now_utc().convert_to_offset(),
 
         )
-			.fetch_one(&self.db)
+			.fetch_one(&*self.db)
 			.await?;
 
         Ok(saved_user)
@@ -63,14 +63,14 @@ impl Repo<User> for UserRepository {
             RETURNING id, name, surname, email, role as "role: _", password_hash, created_at, updated_at
         "#,
         id,
-        user.name.as_deref(),
-        user.surname.as_deref(),
-        user.email.as_deref(),
+        user.name.to_owned(),
+        user.surname.to_owned(),
+        user.email.to_owned(),
         user.role.as_ref(),
-        user.password_hash.as_deref(),
+        user.password_hash.as_string(),
         Timestamp::now_utc().convert_to_offset(),
     )
-    .fetch_one(&self.db)
+    .fetch_one(&*self.db)
     .await?;
 
         Ok(updated_user)
@@ -86,7 +86,7 @@ impl Repo<User> for UserRepository {
         "#,
             id
         )
-        .execute(&self.db)
+        .execute(&*self.db)
         .await?;
 
         Ok(())
@@ -100,7 +100,7 @@ impl Repo<User> for UserRepository {
             FROM "user"
         "#
         )
-        .fetch_all(&self.db)
+        .fetch_all(&*self.db)
         .await
         .map_err(|err| Error::from("Error from getting user by id"))
     }
@@ -116,7 +116,7 @@ impl Repo<User> for UserRepository {
     "#,
             id
         )
-        .fetch_optional(&self.db)
+        .fetch_optional(&*self.db)
         .await
         .map_err(|err| Error::from("Error from getting user by id"))
     }
@@ -146,7 +146,7 @@ impl UserRepo for UserRepository {
             "#,
             email
         )
-        .fetch_optional(&self.db)
+        .fetch_optional(&*self.db)
         .await
         .map_err(|err| Error::from("Error from getting user by email"))
     }
