@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
@@ -96,13 +96,13 @@ impl Repo<User> for UserRepository {
         sqlx::query_as!(
             User,
             r#"
-            SELECT id, name, surname, email, role, password_hash, created_at, updated_at
-            FROM "user"
-        "#
+        SELECT id, name, surname, email, role, password_hash, created_at, updated_at
+        FROM "user"
+    "#
         )
         .fetch_all(&*self.db)
         .await
-        .map_err(|err| Error::from("Error from getting user by id"))
+        .map_err(|err| anyhow!("Error from getting user by id: {}", err))
     }
 
     async fn find_by_id(&self, id_str: &str) -> Result<Option<User>, Error> {
@@ -118,7 +118,7 @@ impl Repo<User> for UserRepository {
         )
         .fetch_optional(&*self.db)
         .await
-        .map_err(|err| Error::from("Error from getting user by id"))
+        .map_err(|err| anyhow!("Error from getting user by id"))
     }
 
     async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<User>, Error>
