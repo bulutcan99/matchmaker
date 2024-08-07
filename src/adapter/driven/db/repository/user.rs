@@ -22,28 +22,26 @@ impl UserRepository {
 
 #[async_trait]
 impl Repo<User> for UserRepository {
-    async fn save(&self, user: &User) -> Result<User, Error> {
-        let saved_user = sqlx::query_as!(
-            User,
-            r#"
-                INSERT INTO "user" (id, name, surname, email, role, password_hash, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                RETURNING id, name, surname, email, role, password_hash, created_at, updated_at
-            "#,
-            user.id,
-            user.name,
-            user.surname,
-            user.email,
-            user.role.as_string(),
-            user.password_hash.as_string(),
-            Timestamp::now_utc().convert_to_offset(),
-            Timestamp::now_utc().convert_to_offset(),
+    async fn save(&self, user: &User) -> Result<Uuid, Error> {
+        let saved_user_id = sqlx::query_scalar!(
+        r#"
+            INSERT INTO "user" (id, name, surname, email, role, password_hash, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id
+        "#,
+        user.id,
+        user.name,
+        user.surname,
+        user.email,
+        user.role.as_string(),
+        user.password_hash.as_string(),
+        Timestamp::now_utc().convert_to_offset(),
+        Timestamp::now_utc().convert_to_offset(),
+    )
+    .fetch_one(&*self.db)
+    .await?;
 
-        )
-			.fetch_one(&*self.db)
-			.await?;
-
-        Ok(saved_user)
+        Ok(saved_user_id)
     }
 
     async fn update(&self, id_str: &str, user: &User) -> Result<User, Error> {
@@ -123,8 +121,8 @@ impl Repo<User> for UserRepository {
 
     async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<User>, Error>
     where
-        F: Fn(&User) -> Q,
-        Q: PartialEq,
+        F: Fn(&User) -> Q + Send + Sync,
+        Q: PartialEq + Send,
     {
         let users = self.find_all().await?;
         let filtered_user = users
@@ -148,6 +146,6 @@ impl UserRepo for UserRepository {
         )
         .fetch_optional(&*self.db)
         .await
-        .map_err(|err| Error::from("Error from getting user by email"))
+        .map_err(|err| anyhow!("Error from getting user by email"))
     }
 }

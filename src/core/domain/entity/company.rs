@@ -8,7 +8,7 @@ use crate::core::domain::valueobject::sector::Sector;
 pub struct Company {
     pub id: Option<Uuid>,
     pub name: String,
-    pub foundation_date: u16,
+    pub foundation_date: i16,
     pub description: String,
     pub url: String,
     pub sector: Sector,
@@ -19,7 +19,7 @@ pub struct Company {
 impl Company {
     pub fn new(
         name: String,
-        foundation_date: u16,
+        foundation_date: i16,
         description: String,
         url: String,
         sector: Sector,

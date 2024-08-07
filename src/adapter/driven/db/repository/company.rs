@@ -19,29 +19,29 @@ impl CompanyRepository {
         CompanyRepository { db }
     }
 }
+
 #[async_trait]
 impl Repo<Company> for CompanyRepository {
-    async fn save(&self, company: &Company) -> Result<Company, Error> {
-        let saved_company = sqlx::query_as!(
-            Company,
-            r#"
-                INSERT INTO company (id, foundation_date, name, description, url, sector, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                RETURNING id, foundation_date, name, description, url, sector, created_at, updated_at
-            "#,
-            company.id,
-            company.foundation_date as i16,
-            company.name,
-            company.description,
-            company.url,
-            company.sector.to_string(),
-            Timestamp::now_utc().convert_to_offset(),
-            Timestamp::now_utc().convert_to_offset(),
-        )
-			.fetch_one(&*self.db)
-			.await?;
+    async fn save(&self, company: &Company) -> Result<Uuid, Error> {
+        let saved_company_id = sqlx::query_scalar!(
+        r#"
+            INSERT INTO company (id, foundation_date, name, description, url, sector, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id
+        "#,
+        company.id,
+        company.foundation_date,
+        company.name,
+        company.description,
+        company.url,
+        company.sector.to_string(),
+        Timestamp::now_utc().convert_to_offset(),
+        Timestamp::now_utc().convert_to_offset(),
+    )
+    .fetch_one(&*self.db)
+    .await?;
 
-        Ok(saved_company)
+        Ok(saved_company_id)
     }
 
     async fn update(&self, id_str: &str, company: &Company) -> Result<Company, Error> {
