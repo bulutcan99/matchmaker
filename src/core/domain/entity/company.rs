@@ -35,8 +35,4 @@ impl Company {
             updated_at: Timestamp::now_utc(),
         }
     }
-
-    pub fn get_sector_string(&self) -> &str {
-        self.sector.to_string()
-    }
 }

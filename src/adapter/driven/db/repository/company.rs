@@ -62,10 +62,10 @@ impl Repo<Company> for CompanyRepository {
         "#,
             id,
             company.foundation_date as i16,
-            company.name.as_deref(),
-            company.description.as_deref(),
-            company.url.as_deref(),
-            company.sector.as_deref(),
+            company.name.as_ref(),
+            company.description.as_ref(),
+            company.url.as_ref(),
+            company.sector.to_string(),
             Timestamp::now_utc().convert_to_offset(),
         )
         .fetch_one(&*self.db)

@@ -23,4 +23,17 @@ impl Sector {
             Sector::Music => "Music".to_owned(),
         }
     }
+
+    pub fn string_to_sector(domain: &str) -> Self {
+        match domain {
+            "Digital" => Sector::Digital,
+            "Marketing" => Sector::Marketing,
+            "Advertisement" => Sector::Advertisement,
+            "Software" => Sector::Software,
+            "AI" => Sector::AI,
+            "Business" => Sector::Business,
+            "Music" => Sector::Music,
+            _ => panic!("Unknown sector: {}", domain),
+        }
+    }
 }
