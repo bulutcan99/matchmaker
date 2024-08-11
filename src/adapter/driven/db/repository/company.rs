@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
@@ -51,8 +51,8 @@ impl Repo<Company> for CompanyRepository {
         // Veritabanına kaydedilecek sector değerini string'e dönüştür
         let sector_str = company.sector.to_string();
 
-        let updated_company = sqlx::query_as!(
-            Company,
+        // Kullanıcıdan `String` değerleri almak için `unwrap_or_default()` kullanın
+        let row = sqlx::query!(
             r#"
         UPDATE company
         SET
@@ -67,23 +67,26 @@ impl Repo<Company> for CompanyRepository {
         "#,
             id,
             company.foundation_date as i16,
-            company.name.as_ref().unwrap_or(&String::new()), // Boş bir string döndürür
-            company.description.as_ref().unwrap_or(&String::new()), // Boş bir string döndürür
-            company.url.as_ref().unwrap_or(&String::new()),  // Boş bir string döndürür
+            company.name.to_owned(),
+            company.description.to_owned(),
+            company.url.to_owned(),
             sector_str,
             Timestamp::now_utc().convert_to_offset(),
         )
         .fetch_one(&*self.db)
         .await?;
 
-        // Dönen sector değerini enum'a dönüştür
-        let sector_enum = Sector::from_string(updated_company.sector.as_str())
-            .ok_or_else(|| Error::from("Unknown sector value"))?;
-
-        // `updated_company`'i `Company` yapısına dönüştürün ve `sector` değerini güncelleyin
+        // Map the result to Company struct manually
         let updated_company = Company {
-            sector: sector_enum,
-            ..updated_company
+            id: Some(row.id),
+            foundation_date: row.foundation_date,
+            name: row.name,
+            description: row.description,
+            url: row.url.unwrap_or_default(),
+            sector: Sector::from_string(&row.sector)
+                .ok_or_else(|| anyhow!("Unknown sector value"))?,
+            created_at: Timestamp::from(row.created_at),
+            updated_at: Timestamp::from(row.updated_at),
         };
 
         Ok(updated_company)
