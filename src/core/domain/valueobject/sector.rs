@@ -24,16 +24,16 @@ impl Sector {
         }
     }
 
-    pub fn string_to_sector(domain: &str) -> Self {
+    pub fn from_string(domain: &str) -> Option<Self> {
         match domain {
-            "Digital" => Sector::Digital,
-            "Marketing" => Sector::Marketing,
-            "Advertisement" => Sector::Advertisement,
-            "Software" => Sector::Software,
-            "AI" => Sector::AI,
-            "Business" => Sector::Business,
-            "Music" => Sector::Music,
-            _ => panic!("Unknown sector: {}", domain),
+            "Digital" => Some(Sector::Digital),
+            "Marketing" => Some(Sector::Marketing),
+            "Advertisement" => Some(Sector::Advertisement),
+            "Software" => Some(Sector::Software),
+            "AI" => Some(Sector::AI),
+            "Business" => Some(Sector::Business),
+            "Music" => Some(Sector::Music),
+            _ => None,
         }
     }
 }

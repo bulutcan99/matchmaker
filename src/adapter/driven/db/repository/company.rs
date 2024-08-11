@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 use crate::core::domain::entity::company::Company;
 use crate::core::domain::valueobject::date::Timestamp;
+use crate::core::domain::valueobject::sector::Sector;
 use crate::core::port::company::CompanyRepo;
 use crate::core::port::storage::Repo;
 
@@ -46,30 +47,44 @@ impl Repo<Company> for CompanyRepository {
 
     async fn update(&self, id_str: &str, company: &Company) -> Result<Company, Error> {
         let id = Uuid::parse_str(id_str)?;
+
+        // Veritabanına kaydedilecek sector değerini string'e dönüştür
+        let sector_str = company.sector.to_string();
+
         let updated_company = sqlx::query_as!(
             Company,
             r#"
-            UPDATE company
-            SET
-                foundation_date = COALESCE($2, foundation_date),
-                name = COALESCE($3, name),
-                description = COALESCE($4, description),
-                url = COALESCE($5, url),
-                sector = COALESCE($6, sector),
-                updated_at = COALESCE($7, updated_at)
-            WHERE id = $1
-            RETURNING id, foundation_date, name, description, url, sector, created_at, updated_at
+        UPDATE company
+        SET
+            foundation_date = COALESCE($2, foundation_date),
+            name = COALESCE($3, name),
+            description = COALESCE($4, description),
+            url = COALESCE($5, url),
+            sector = COALESCE($6, sector),
+            updated_at = COALESCE($7, updated_at)
+        WHERE id = $1
+        RETURNING id, foundation_date, name, description, url, sector, created_at, updated_at
         "#,
             id,
             company.foundation_date as i16,
-            company.name.as_ref(),
-            company.description.as_ref(),
-            company.url.as_ref(),
-            company.sector.to_string(),
+            company.name.as_ref().unwrap_or(&String::new()), // Boş bir string döndürür
+            company.description.as_ref().unwrap_or(&String::new()), // Boş bir string döndürür
+            company.url.as_ref().unwrap_or(&String::new()),  // Boş bir string döndürür
+            sector_str,
             Timestamp::now_utc().convert_to_offset(),
         )
         .fetch_one(&*self.db)
         .await?;
+
+        // Dönen sector değerini enum'a dönüştür
+        let sector_enum = Sector::from_string(updated_company.sector.as_str())
+            .ok_or_else(|| Error::from("Unknown sector value"))?;
+
+        // `updated_company`'i `Company` yapısına dönüştürün ve `sector` değerini güncelleyin
+        let updated_company = Company {
+            sector: sector_enum,
+            ..updated_company
+        };
 
         Ok(updated_company)
     }
