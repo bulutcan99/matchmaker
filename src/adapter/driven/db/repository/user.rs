@@ -127,7 +127,8 @@ impl Repo<User> for UserRepository {
         let users = self.find_all().await?;
         let filtered_user = users
             .into_iter()
-            .find(|user| filter(user) == filter(&users[0]));
+            .find(|user| filter(user) == filter(&users[0]))
+            .clone();
 
         Ok(filtered_user)
     }

@@ -47,11 +47,7 @@ impl Repo<Company> for CompanyRepository {
 
     async fn update(&self, id_str: &str, company: &Company) -> Result<Company, Error> {
         let id = Uuid::parse_str(id_str)?;
-
-        // Veritabanına kaydedilecek sector değerini string'e dönüştür
         let sector_str = company.sector.to_string();
-
-        // Kullanıcıdan `String` değerleri almak için `unwrap_or_default()` kullanın
         let row = sqlx::query!(
             r#"
         UPDATE company
@@ -76,7 +72,6 @@ impl Repo<Company> for CompanyRepository {
         .fetch_one(&*self.db)
         .await?;
 
-        // Map the result to Company struct manually
         let updated_company = Company {
             id: Some(row.id),
             foundation_date: row.foundation_date,
@@ -107,15 +102,33 @@ impl Repo<Company> for CompanyRepository {
     }
 
     async fn find_all(&self) -> Result<Vec<Company>, Error> {
-        let companies = sqlx::query_as!(
-            Company,
+        let rows = sqlx::query!(
             r#"
-                SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
-                FROM company
-            "#
+            SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
+            FROM company
+        "#
         )
         .fetch_all(&*self.db)
         .await?;
+
+        let companies = rows
+            .into_iter()
+            .map(|row| {
+                let sector_enum = Sector::from_string(&row.sector)
+                    .ok_or_else(|| anyhow!("Unknown sector value"))?;
+
+                Ok(Company {
+                    id: Some(row.id),
+                    foundation_date: row.foundation_date,
+                    name: row.name,
+                    description: row.description,
+                    url: row.url.unwrap_or_default(),
+                    sector: sector_enum,
+                    created_at: Timestamp::from(row.created_at),
+                    updated_at: Timestamp::from(row.updated_at),
+                })
+            })
+            .collect::<Result<Vec<Company>, Error>>()?;
 
         Ok(companies)
     }
@@ -132,7 +145,7 @@ impl Repo<Company> for CompanyRepository {
         )
         .fetch_optional(&*self.db)
         .await
-        .map_err(|err| Error::from("Error from getting company by id"))
+        .map_err(|err| anyhow!("Error from getting company by id"))
     }
 
     async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Error>
