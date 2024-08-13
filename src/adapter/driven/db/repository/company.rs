@@ -135,8 +135,8 @@ impl Repo<Company> for CompanyRepository {
 
     async fn find_by_id(&self, id_str: &str) -> Result<Option<Company>, Error> {
         let id = Uuid::parse_str(id_str)?;
-        sqlx::query_as!(
-            Company,
+
+        let row = sqlx::query!(
             r#"
         SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
         FROM "company" WHERE id = $1
@@ -145,18 +145,39 @@ impl Repo<Company> for CompanyRepository {
         )
         .fetch_optional(&*self.db)
         .await
-        .map_err(|err| anyhow!("Error from getting company by id"))
+        .map_err(|err| anyhow!("Error from getting company by id"))?;
+
+        if let Some(row) = row {
+            let sector_enum = Sector::from_string(&row.sector)
+                .ok_or_else(|| Error::from("Unknown sector value"))?;
+
+            let company = Company {
+                id: Some(row.id),
+                foundation_date: row.foundation_date,
+                name: row.name,
+                description: row.description,
+                url: row.url.unwrap_or_default(),
+                sector: sector_enum,
+                created_at: Timestamp::from(row.created_at),
+                updated_at: Timestamp::from(row.updated_at),
+            };
+
+            Ok(Some(company))
+        } else {
+            Ok(None)
+        }
     }
 
     async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Error>
     where
-        F: Fn(&Company) -> Q,
-        Q: PartialEq,
+        F: Fn(&Company) -> Q + Send + Sync,
+        Q: PartialEq + Send,
     {
         let companies = self.find_all().await?;
         let filtered_company = companies
             .into_iter()
-            .find(|company| filter(company) == filter(&companies[0]));
+            .find(|company| filter(company) == filter(&companies[0]))
+            .clone();
 
         Ok(filtered_company)
     }
