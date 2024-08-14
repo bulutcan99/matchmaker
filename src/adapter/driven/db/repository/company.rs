@@ -148,8 +148,8 @@ impl Repo<Company> for CompanyRepository {
         .map_err(|err| anyhow!("Error from getting company by id"))?;
 
         if let Some(row) = row {
-            let sector_enum = Sector::from_string(&row.sector)
-                .ok_or_else(|| Error::from("Unknown sector value"))?;
+            let sector_enum =
+                Sector::from_string(&row.sector).ok_or_else(|| anyhow!("Unknown sector value"))?;
 
             let company = Company {
                 id: Some(row.id),
@@ -186,16 +186,35 @@ impl Repo<Company> for CompanyRepository {
 #[async_trait]
 impl CompanyRepo for CompanyRepository {
     async fn find_by_name(&self, name: &str) -> Result<Option<Company>, Error> {
-        let found_company = sqlx::query_as!(
-            Company,
+        let row = sqlx::query!(
             r#"
-            SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
-            FROM "company" WHERE name = $1
-            "#,
+        SELECT id, foundation_date, name, description, url, sector, created_at, updated_at
+        FROM "company" WHERE name = $1
+    "#,
             name
         )
         .fetch_optional(&*self.db)
-        .await?;
-        Ok(found_company)
+        .await
+        .map_err(|err| anyhow!("Error from getting company by name"))?;
+
+        if let Some(row) = row {
+            let sector_enum =
+                Sector::from_string(&row.sector).ok_or_else(|| anyhow!("Unknown sector value"))?;
+
+            let company = Company {
+                id: Some(row.id),
+                foundation_date: row.foundation_date,
+                name: row.name,
+                description: row.description,
+                url: row.url.unwrap_or_default(),
+                sector: sector_enum,
+                created_at: Timestamp::from(row.created_at),
+                updated_at: Timestamp::from(row.updated_at),
+            };
+
+            Ok(Some(company))
+        } else {
+            Ok(None)
+        }
     }
 }
