@@ -105,48 +105,41 @@ impl Repo<User> for UserRepository {
 
     async fn find_by_id(&self, id_str: &str) -> Result<Option<User>, Error> {
         let id = Uuid::parse_str(id_str)?;
-
-        sqlx::query_as!(
+        let row = sqlx::query_as!(
             User,
             r#"
         SELECT id, name, surname, email, role, password_hash, created_at, updated_at
         FROM "user" WHERE id = $1
-    "#,
+        "#,
             id
         )
         .fetch_optional(&*self.db)
         .await
-        .map_err(|err| anyhow!("Error from getting user by id"))
-    }
+        .map_err(|err| anyhow!("Error from getting user by id: {}", err))?;
 
-    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<User>, Error>
-    where
-        F: Fn(&User) -> Q + Send + Sync,
-        Q: PartialEq + Send,
-    {
-        let users = self.find_all().await?;
-        let filtered_user = users
-            .into_iter()
-            .find(|user| filter(user) == filter(&users[0]))
-            .clone();
-
-        Ok(filtered_user)
+        if let Some(user) = row {
+            Ok(Some(user))
+        } else {
+            Ok(None)
+        }
     }
 }
 
 #[async_trait]
 impl UserRepo for UserRepository {
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, Error> {
-        sqlx::query_as!(
+        let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, name, surname, email, role, password_hash, created_at, updated_at
-            FROM "user" WHERE email = $1
-            "#,
+        SELECT id, name, surname, email, role, password_hash, created_at, updated_at
+        FROM "user" WHERE email = $1
+        "#,
             email
         )
         .fetch_optional(&*self.db)
         .await
-        .map_err(|err| anyhow!("Error from getting user by email"))
+        .map_err(|err| anyhow!("Error getting user by email: {}", err))?;
+
+        Ok(user)
     }
 }

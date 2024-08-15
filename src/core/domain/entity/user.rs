@@ -41,12 +41,4 @@ impl User {
 
         Ok(())
     }
-
-    pub fn get_role_string(&self) -> &str {
-        self.role.as_ref()
-    }
-
-    pub fn hashed_password_string(&self) -> &str {
-        self.password_hash.as_str()
-    }
 }

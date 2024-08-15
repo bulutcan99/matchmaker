@@ -1,5 +1,6 @@
 use anyhow::Error;
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::core::application::usecase::user::dto::{
 	AuthenticatedUserOutput, GetProfileInput, GetProfileOutput, UpdateUserPofileInput,
@@ -14,7 +15,7 @@ pub trait UserRepo: Send + Sync {
 
 #[async_trait]
 pub trait UserManagement: Send + Sync {
-    async fn register(&self, input: &UserRegisterInput) -> Result<User, Error>;
+    async fn register(&self, input: &UserRegisterInput) -> Result<Uuid, Error>;
     async fn login(&self, input: &UserLoginInput) -> Result<AuthenticatedUserOutput, Error>;
     async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error>;
     async fn get_profile(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error>;

@@ -167,20 +167,6 @@ impl Repo<Company> for CompanyRepository {
             Ok(None)
         }
     }
-
-    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Company>, Error>
-    where
-        F: Fn(&Company) -> Q + Send + Sync,
-        Q: PartialEq + Send,
-    {
-        let companies = self.find_all().await?;
-        let filtered_company = companies
-            .into_iter()
-            .find(|company| filter(company) == filter(&companies[0]))
-            .clone();
-
-        Ok(filtered_company)
-    }
 }
 
 #[async_trait]

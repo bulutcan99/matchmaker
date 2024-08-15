@@ -12,8 +12,4 @@ where
     async fn delete(&self, id_str: &str) -> Result<(), Error>;
     async fn find_all(&self) -> Result<Vec<Entity>, Error>;
     async fn find_by_id(&self, id_str: &str) -> Result<Option<Entity>, Error>;
-    async fn find_by<F, Q>(&self, filter: &F) -> Result<Option<Entity>, Error>
-    where
-        F: Fn(&Entity) -> Q + Send + Sync,
-        Q: PartialEq + Send;
 }

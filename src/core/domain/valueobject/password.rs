@@ -18,7 +18,7 @@ impl HashedPassword {
         let mut hasher = Hasher::default();
         let hashed_password = hasher
             .with_password(password)
-            .with_salt(&email)
+            .with_salt(email)
             .with_secret_key(get_secret_key().unwrap())
             .hash()
             .unwrap();

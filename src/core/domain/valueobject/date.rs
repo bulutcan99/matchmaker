@@ -33,8 +33,10 @@ impl Timestamp {
 
 impl From<OffsetDateTime> for Timestamp {
     fn from(odt: OffsetDateTime) -> Self {
-        Self {
-            datetime: DateTime::<Utc>::from_naive_utc_and_offset(odt.date().naive_utc(), Utc),
-        }
+        let dt = Utc::now();
+        let naive_utc = dt.naive_utc();
+        let offset = dt.offset().clone();
+        let dt_new = DateTime::<Utc>::from_naive_utc_and_offset(naive_utc, offset);
+        Self { datetime: dt_new }
     }
 }

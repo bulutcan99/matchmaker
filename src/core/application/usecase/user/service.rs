@@ -1,5 +1,6 @@
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::core::application::usecase::user::dto::{
     AuthenticatedUserOutput, GetProfileInput, GetProfileOutput, UpdateUserPofileInput,
@@ -44,23 +45,26 @@ where
     K: Repo<User>,
     U: UserRepo,
 {
-    async fn register(&self, input: &UserRegisterInput) -> Result<User, Error> {
-        let found_user = self.user_repository.find_by_email(input.email.as_str());
-        match found_user {
-            Some(_) => Err(Error::from("This email already in use!")),
-            None => {
-                let new_user = User::new(
-                    input.first_name.clone(),
-                    input.last_name.clone(),
-                    input.email.clone(),
-                    input.password.clone(),
-                    role::Role::User,
-                );
+    async fn register(&self, input: &UserRegisterInput) -> Result<Uuid, Error> {
+        let found_user = self
+            .user_repository
+            .find_by_email(input.email.as_str())
+            .await?;
 
-                let registered_user = self.repo_user.save(new_user)?;
-                Ok(registered_user)
-            }
+        if found_user.is_some() {
+            return Err(anyhow!("This email is already in use!"));
         }
+
+        let new_user = User::new(
+            input.first_name.clone(),
+            input.last_name.clone(),
+            input.email.clone(),
+            input.password.clone(),
+            role::Role::User,
+        );
+
+        let registered_id = self.repo_user.save(&new_user).await?;
+        Ok(registered_id)
     }
 
     async fn login(&self, input: &UserLoginInput) -> Result<AuthenticatedUserOutput, Error> {
