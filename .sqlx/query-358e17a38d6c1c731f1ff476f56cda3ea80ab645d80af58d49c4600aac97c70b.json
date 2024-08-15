@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        UPDATE company\n        SET\n            foundation_date = COALESCE($2, foundation_date),\n            name = COALESCE($3, name),\n            description = COALESCE($4, description),\n            url = COALESCE($5, url),\n            sector = COALESCE($6, sector),\n            updated_at = COALESCE($7, updated_at)\n        WHERE id = $1\n        RETURNING id, foundation_date, name, description, url, sector, created_at, updated_at\n        ",
+  "query": "\n            SELECT id, foundation_date, name, description, url, sector, created_at, updated_at\n            FROM company WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -46,13 +46,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Int2",
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Timestamptz"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -66,5 +60,5 @@
       false
     ]
   },
-  "hash": "22b1715f1fa4394172c170eae88d0237c3720b45884272ae781ebee2f97ebdda"
+  "hash": "358e17a38d6c1c731f1ff476f56cda3ea80ab645d80af58d49c4600aac97c70b"
 }

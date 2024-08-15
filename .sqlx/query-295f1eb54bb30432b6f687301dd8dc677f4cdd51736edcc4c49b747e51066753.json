@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            INSERT INTO company (id, foundation_date, name, description, url, sector, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            RETURNING id\n        ",
+  "query": "\n            INSERT INTO company (id, foundation_date, name, description, url, sector, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n            RETURNING id\n            ",
   "describe": {
     "columns": [
       {
@@ -25,5 +25,5 @@
       false
     ]
   },
-  "hash": "27f262f0f80625852011a23b4626d66c8f901068e0918f1868d7ca029117e118"
+  "hash": "295f1eb54bb30432b6f687301dd8dc677f4cdd51736edcc4c49b747e51066753"
 }

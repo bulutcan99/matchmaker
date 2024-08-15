@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        SELECT id, foundation_date, name, description, url, sector, created_at, updated_at\n        FROM \"company\" WHERE id = $1\n    ",
+  "query": "\n            SELECT id, foundation_date, name, description, url, sector, created_at, updated_at\n            FROM company\n            ",
   "describe": {
     "columns": [
       {
@@ -45,9 +45,7 @@
       }
     ],
     "parameters": {
-      "Left": [
-        "Uuid"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
@@ -60,5 +58,5 @@
       false
     ]
   },
-  "hash": "16af8bad62033d31cf3e2e52ad6df2239b74377fc7e87a906cdfeb92ceb4b3a7"
+  "hash": "606d55b215bcdbeaea4bb4ba6a2610b9a598912e4da7915dac52fdfd075ebc33"
 }
