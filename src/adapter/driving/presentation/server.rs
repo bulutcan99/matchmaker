@@ -324,7 +324,7 @@ mod tests {
         let _ = timeout(Duration::from_secs(1), conn).await.unwrap();
     }
 
-    // Test graceful shutdown with no timeout.
+    // Test for graceful shutdown with no timeout.
     #[tokio::test]
     async fn test_graceful_shutdown_no_timeout() {
         let (handle, server_task, addr) = start_server().await;
