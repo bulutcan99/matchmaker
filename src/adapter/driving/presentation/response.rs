@@ -1,7 +1,20 @@
-use axum::{http::StatusCode, Json, response::IntoResponse};
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde::Serialize;
 
 use super::{ApiResponseError, ApiResponseErrorObject};
+
+// Response types
+pub enum ApiResponseType {
+    SuccessWithData,
+    StatusCodeOnly,
+    Error,
+}
+
+impl Default for ApiResponseType {
+    fn default() -> Self {
+        Self::SuccessWithData
+    }
+}
 
 pub enum ApiResponseData<T: Serialize> {
     Data {

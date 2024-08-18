@@ -1,2 +1,2 @@
 mod auth_handler;
-mod dto;
+mod register;
