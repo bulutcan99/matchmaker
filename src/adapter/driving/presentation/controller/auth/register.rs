@@ -1,5 +1,4 @@
 use axum::Json;
-use axum::response::IntoResponse;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
 use validator::{Validate, ValidationErrors};
@@ -7,7 +6,6 @@ use validator::{Validate, ValidationErrors};
 use crate::adapter::driving::presentation::controller::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::field_error::ResponseError;
 use crate::adapter::driving::presentation::response::{ApiResponse, ApiResponseData};
-use crate::core::application::usecase::user::dto::UserRegisterInput;
 use crate::core::port::user::UserManagement;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -76,6 +74,9 @@ impl<S> AuthHandler<S>
 where
     S: UserManagement,
 {
-    pub async fn register(&self, payload: Json<UserRegisterRequest>) -> ApiResponse<RegisterResponseObject, ResponseError> {
-
+    pub async fn register(
+        &self,
+        user_register: Json<UserRegisterRequest>,
+    ) -> ApiResponse<RegisterResponseObject, ResponseError> {
+    }
 }
