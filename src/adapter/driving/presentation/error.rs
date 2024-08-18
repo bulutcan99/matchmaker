@@ -42,20 +42,3 @@ impl From<ApiResponseError> for ApiResponseErrorObject {
         }
     }
 }
-
-
-/*
-    example 1:
-    {
-        "message": "simple error",
-        "error": null
-    }
-    example 2:
-    {
-        "message": "complicated error",
-        "error": {
-            "code": "1213213",
-            "foo": "bar"
-        }
-    }
-*/

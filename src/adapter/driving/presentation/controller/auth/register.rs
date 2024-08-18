@@ -6,7 +6,7 @@ use validator::{Validate, ValidationErrors};
 
 use crate::adapter::driving::presentation::controller::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::field_error::ResponseError;
-use crate::adapter::driving::presentation::response::ApiResponseData;
+use crate::adapter::driving::presentation::response::{ApiResponse, ApiResponseData};
 use crate::core::application::usecase::user::dto::UserRegisterInput;
 use crate::core::port::user::UserManagement;
 
@@ -76,37 +76,6 @@ impl<S> AuthHandler<S>
 where
     S: UserManagement,
 {
-    pub async fn register(&self, payload: Json<UserRegisterRequest>) -> impl IntoResponse {
-        if let Err(e) = payload.validate() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::error(Some(e.to_string()))),
-            ));
-        }
+    pub async fn register(&self, payload: Json<UserRegisterRequest>) -> ApiResponse<RegisterResponseObject, ResponseError> {
 
-        let result = self
-            .user_service
-            .register(&UserRegisterInput {
-                email: payload.email.clone(),
-                first_name: payload.first_name.clone(),
-                last_name: payload.last_name.clone(),
-                password: payload.password.clone(),
-            })
-            .await;
-
-        if let Some(user_id) = result {
-            return Ok((
-                StatusCode::OK,
-                Json(ApiResponse::success(
-                    Some("You have successfully registered.".to_string()),
-                    Some(user_id),
-                )),
-            ));
-        }
-
-        Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::error(Some("Registration failed".to_string()))),
-        ))
-    }
 }

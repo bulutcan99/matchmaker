@@ -1,7 +1,7 @@
-use axum::{http::StatusCode, response::IntoResponse, Json};
+use axum::{http::StatusCode, Json, response::IntoResponse};
 use serde::Serialize;
 
-use super::{ApiResponseError, ApiResponseErrorObject};
+use crate::adapter::driving::presentation::error::{ApiResponseError, ApiResponseErrorObject};
 
 // Response types
 pub enum ApiResponseType {
