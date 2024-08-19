@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 use crate::config::Settings;
 

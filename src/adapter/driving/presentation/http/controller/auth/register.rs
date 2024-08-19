@@ -3,9 +3,12 @@ use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
 use validator::{Validate, ValidationErrors};
 
-use crate::adapter::driving::presentation::controller::auth::auth_handler::AuthHandler;
-use crate::adapter::driving::presentation::field_error::ResponseError;
-use crate::adapter::driving::presentation::response::{ApiResponse, ApiResponseData};
+use crate::adapter::driving::presentation::http::controller::auth::auth_handler::AuthHandler;
+use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
+use crate::adapter::driving::presentation::http::response::response::{
+    ApiResponse, ApiResponseData,
+};
+use crate::core::application::usecase::user::dto::UserRegisterInput;
 use crate::core::port::user::UserManagement;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -76,7 +79,28 @@ where
 {
     pub async fn register(
         &self,
-        user_register: Json<UserRegisterRequest>,
+        register_user: Json<UserRegisterRequest>,
     ) -> ApiResponse<RegisterResponseObject, ResponseError> {
+        register_user.validate().map_err(ApiError::BadClientData)?;
+
+        let result = self
+            .user_service
+            .register(&UserRegisterInput {
+                email: register_user.email.clone(),
+                first_name: register_user.first_name.clone(),
+                last_name: register_user.last_name.clone(),
+                password: register_user.password.clone(),
+            })
+            .await;
+
+        match result {
+            Ok(user_id) => {
+                let data = RegisterResponseObject {
+                    uuid: String::from(user_id),
+                };
+                Ok(ApiResponseData::success_with_data(data, StatusCode::OK))
+            }
+            Err(_) => Err(ApiError::DbInternalError.into()),
+        }
     }
 }

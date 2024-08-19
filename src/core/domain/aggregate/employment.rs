@@ -9,20 +9,19 @@ use crate::core::domain::valueobject::position::Position;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Employment {
-	pub user: User,
-	pub company: Company,
-	pub position: Position,
+    pub user: User,
+    pub company: Company,
+    pub position: Position,
 }
 
 impl Display for Employment {
-	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-		write!(f, "User: {}", self.user.name)
-	}
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "User: {}", self.user.name)
+    }
 }
 
-
 impl Employment {
-	pub fn sit_table(&self, table_id: u8) {
-		println!("{}, sitted {}", self.user.name, table_id)
-	}
+    pub fn sit_table(&self, table_id: u8) {
+        println!("{}, sitted {}", self.user.name, table_id)
+    }
 }

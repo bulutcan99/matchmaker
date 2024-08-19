@@ -20,7 +20,7 @@ async-trait = "0.1.81"
 rand = "0.8.5"
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 argonautica = { version = "0.2.0" }
-tower = "0.5.0"
+tower = { version = "0.5.0", features = ["util"] }
 futures-util = "0.3.30"
 http = "1.1.0"
 hyper = { version = "1.4.1", features = ["client"] }

@@ -17,9 +17,9 @@ use tokio::{
     net::{TcpListener, TcpStream},
 };
 
-use crate::adapter::driving::presentation::accept::{Accept, DefaultAcceptor};
-use crate::adapter::driving::presentation::handle::Handle;
-use crate::adapter::driving::presentation::service::{
+use crate::adapter::driving::presentation::http::accept::{Accept, DefaultAcceptor};
+use crate::adapter::driving::presentation::http::handle::Handle;
+use crate::adapter::driving::presentation::http::service::{
     MakeService, SendService, TowerToHyperService,
 };
 
@@ -288,8 +288,8 @@ mod tests {
     use tokio::{net::TcpStream, task::JoinHandle, time::timeout};
     use tokio::sync::oneshot;
 
-    use crate::adapter::driving::presentation::handle::Handle;
-    use crate::adapter::driving::presentation::server::Server;
+    use crate::adapter::driving::presentation::http::handle::Handle;
+    use crate::adapter::driving::presentation::http::server::Server;
 
     #[tokio::test]
     async fn start_and_request() {

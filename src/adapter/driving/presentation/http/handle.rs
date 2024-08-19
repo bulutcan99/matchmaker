@@ -9,7 +9,7 @@ use std::{
 
 use tokio::{sync::Notify, time::sleep};
 
-use crate::adapter::driving::presentation::notify_once::NotifyOnce;
+use crate::adapter::driving::presentation::http::notify_once::NotifyOnce;
 
 /// A handle for [`Server`](crate::server::Server).
 #[derive(Clone, Debug, Default)]

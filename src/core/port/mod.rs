@@ -1,4 +1,4 @@
-pub mod user;
+pub mod auth;
 pub mod company;
 pub mod storage;
-pub mod auth;
+pub mod user;

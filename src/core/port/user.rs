@@ -3,8 +3,8 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 use crate::core::application::usecase::user::dto::{
-	AuthenticatedUserOutput, GetProfileInput, GetProfileOutput, UpdateUserPofileInput,
-	UserLoginInput, UserRegisterInput,
+    AuthenticatedUserOutput, GetProfileInput, GetProfileOutput, UpdateUserPofileInput,
+    UserLoginInput, UserRegisterInput,
 };
 use crate::core::domain::entity::user::User;
 
