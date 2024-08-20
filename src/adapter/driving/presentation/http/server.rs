@@ -23,7 +23,6 @@ use crate::adapter::driving::presentation::http::service::{
     MakeService, SendService, TowerToHyperService,
 };
 
-/// HTTP server.
 pub struct Server<A = DefaultAcceptor> {
     acceptor: A,
     builder: Builder<TokioExecutor>,
@@ -31,7 +30,6 @@ pub struct Server<A = DefaultAcceptor> {
     handle: Handle,
 }
 
-// Builder doesn't implement Debug or Clone right now
 impl<A> fmt::Debug for Server<A>
 where
     A: fmt::Debug,
@@ -51,18 +49,15 @@ enum Listener {
     Std(std::net::TcpListener),
 }
 
-/// Create a [`Server`] that will bind to provided address.
 pub fn bind(addr: SocketAddr) -> Server {
     Server::bind(addr)
 }
 
-/// Create a [`Server`] from existing `std::net::TcpListener`.
 pub fn from_tcp(listener: std::net::TcpListener) -> Server {
     Server::from_tcp(listener)
 }
 
 impl Server {
-    /// Create a server that will bind to provided address.
     pub fn bind(addr: SocketAddr) -> Self {
         let acceptor = DefaultAcceptor::new();
         let builder = Builder::new(TokioExecutor::new());
@@ -76,7 +71,6 @@ impl Server {
         }
     }
 
-    /// Create a server from existing `std::net::TcpListener`.
     pub fn from_tcp(listener: std::net::TcpListener) -> Self {
         let acceptor = DefaultAcceptor::new();
         let builder = Builder::new(TokioExecutor::new());
@@ -92,7 +86,6 @@ impl Server {
 }
 
 impl<A> Server<A> {
-    /// Overwrite acceptor.
     pub fn acceptor<Acceptor>(self, acceptor: Acceptor) -> Server<Acceptor> {
         Server {
             acceptor,
@@ -102,7 +95,6 @@ impl<A> Server<A> {
         }
     }
 
-    /// Map acceptor.
     pub fn map<Acceptor, F>(self, acceptor: F) -> Server<Acceptor>
     where
         F: FnOnce(A) -> Acceptor,
@@ -115,42 +107,23 @@ impl<A> Server<A> {
         }
     }
 
-    /// Returns a reference to the acceptor.
     pub fn get_ref(&self) -> &A {
         &self.acceptor
     }
 
-    /// Returns a mutable reference to the acceptor.
     pub fn get_mut(&mut self) -> &mut A {
         &mut self.acceptor
     }
 
-    /// Returns a mutable reference to the Http builder.
     pub fn http_builder(&mut self) -> &mut Builder<TokioExecutor> {
         &mut self.builder
     }
 
-    /// Provide a handle for additional utilities.
     pub fn handle(mut self, handle: Handle) -> Self {
         self.handle = handle;
         self
     }
 
-    /// Serve provided [`MakeService`].
-    ///
-    /// To create [`MakeService`] easily, `Shared` from [`tower`] can be used.
-    ///
-    /// # Errors
-    ///
-    /// An error will be returned when:
-    ///
-    /// - Binding to an address fails.
-    /// - `make_service` returns an error when `poll_ready` is called. This never happens on
-    ///   [`axum`] make services.
-    ///
-    /// [`axum`]: https://docs.rs/axum/0.3
-    /// [`tower`]: https://docs.rs/tower
-    /// [`MakeService`]: https://docs.rs/tower/0.4/tower/make/trait.MakeService.html
     pub async fn serve<M>(self, mut make_service: M) -> io::Result<()>
     where
         M: MakeService<SocketAddr, Request<Incoming>>,
@@ -227,12 +200,7 @@ impl<A> Server<A> {
             result = accept_loop_future => result,
         };
 
-        // Tokio internally accepts TCP connections while the TCPListener is active;
-        // drop the listener to immediately refuse connections rather than letting
-        // them hang.
         drop(incoming);
-
-        // attempting to do a "result?;" requires us to specify the type of result which is annoying
         #[allow(clippy::question_mark)]
         if let Err(e) = result {
             return Err(e);
@@ -341,9 +309,6 @@ mod tests {
         let (hdr1_tx, hdr1_rx) = oneshot::channel::<()>();
 
         let fut1 = async {
-            // A slow request made before graceful shutdown is handled.
-            // Since there's no request timeout, this can take as long as it
-            // needs.
             let hdr1 = send_slow_request(&mut client1, Duration::from_millis(500))
                 .await
                 .unwrap();
@@ -366,12 +331,8 @@ mod tests {
 
         tokio::join!(fut1, fut2);
 
-        // At this point, graceful shutdown must have occured, and the slow
-        // request must have finished. Since there was no timeout, the elapsed
-        // time should be at least 500 ms (slow request duration).
         assert!(start.elapsed() >= Duration::from_millis(500 + 100));
 
-        // Server task should finish soon.
         timeout(Duration::from_secs(1), server_task)
             .await
             .unwrap()
@@ -519,9 +480,6 @@ mod tests {
         Ok(())
     }
 
-    // A stream of n response data `Frame`s, where n = `length`, and each frame
-    // consists of a single byte. The whole response is smeared out over
-    // a `duration` length of time.
     fn slow_body(length: usize, duration: Duration) -> axum::body::Body {
         let frames =
             (0..length).map(move |_| Ok::<_, hyper::Error>(Frame::data(Bytes::from_static(b"X"))));
