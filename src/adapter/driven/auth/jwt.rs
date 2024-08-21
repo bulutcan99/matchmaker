@@ -35,7 +35,6 @@ impl JwtTokenHandler {
 #[async_trait]
 impl TokenMaker for JwtTokenHandler {
     async fn generate_token(&self, user: &User) -> String {
-        let expire_time = self.get_expire_time();
         let payload = Payload {
             user_id: user.id.unwrap_or_default(),
             expired_at: self.get_expire_time(),

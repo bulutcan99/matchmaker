@@ -30,7 +30,7 @@ impl Repo<User> for UserRepository {
         *counter += 1;
 
         let new_id = Uuid::new_v4();
-        owned_user.set_id(new_id);
+        owned_user.id = Some(new_id);
 
         self.cache.add(new_id, owned_user.clone()).await;
 
