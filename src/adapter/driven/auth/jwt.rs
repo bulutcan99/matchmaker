@@ -17,7 +17,7 @@ impl JwtTokenHandler {
         let config = Settings::get();
         let key = config
             .password
-            .secret_key
+            .secret_jwt
             .as_deref()
             .unwrap_or_default()
             .to_owned();
@@ -25,7 +25,7 @@ impl JwtTokenHandler {
     }
 
     pub fn get_expire_time(&self) -> u64 {
-        let expire = 1000 * 60 * 60 * 5; // 5 saat
+        let expire = 1000 * 60 * 60 * 5; // 5 hours
         let current_time = Timestamp::now_utc();
         let expire_time = current_time + expire;
         expire_time.datetime.timestamp() as u64

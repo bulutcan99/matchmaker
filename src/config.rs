@@ -8,6 +8,7 @@ use serde::Deserialize;
 #[allow(unused)]
 pub struct Password {
     pub secret_key: Option<String>,
+    pub secret_jwt: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

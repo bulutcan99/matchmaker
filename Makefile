@@ -2,7 +2,7 @@
 BINARY_NAME := matchmaker
 HTTP_MAIN_PACKAGE_PATH := src/http
 MIGRATION_FOLDER := migrations
-DB_URL := postgres://postgres:password@localhost:5432/matchmaker?sslmode=disable
+DB_URL := postgres://postgres:1234@localhost:5432/matchmaker?sslmode=disable
 
 # DOCUMENTATION
 ## Database Documentation
@@ -144,7 +144,3 @@ sqlx-migrate-revert:
 .PHONY: sqlx-prepare
 sqlx-prepare:
 	cargo sqlx prepare --database-url $(DB_URL)
-
-.PHONY: sqlx-reset
-sqlx-reset:
-	cargp sqlx reset
