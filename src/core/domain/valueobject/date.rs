@@ -1,12 +1,33 @@
-use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use std::ops::Add;
+
+use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Timestamp {
-    datetime: DateTime<Utc>,
+    pub datetime: DateTime<Utc>,
 }
 
+impl From<OffsetDateTime> for Timestamp {
+    fn from(odt: OffsetDateTime) -> Self {
+        let dt = Utc::now();
+        let naive_utc = dt.naive_utc();
+        let offset = dt.offset().clone();
+        let dt_new = DateTime::<Utc>::from_naive_utc_and_offset(naive_utc, offset);
+        Self { datetime: dt_new }
+    }
+}
+
+impl Add<u64> for Timestamp {
+    type Output = Self;
+
+    fn add(self, rhs: u64) -> Self::Output {
+        let duration = Duration::milliseconds(rhs as i64);
+        let new_datetime = self.datetime + duration;
+        Timestamp::new(new_datetime)
+    }
+}
 impl Timestamp {
     pub fn new(datetime: DateTime<Utc>) -> Self {
         Self { datetime }
@@ -29,14 +50,10 @@ impl Timestamp {
     pub fn convert_to_offset(&self) -> OffsetDateTime {
         OffsetDateTime::from_unix_timestamp(self.datetime.timestamp()).unwrap()
     }
-}
 
-impl From<OffsetDateTime> for Timestamp {
-    fn from(odt: OffsetDateTime) -> Self {
-        let dt = Utc::now();
-        let naive_utc = dt.naive_utc();
-        let offset = dt.offset().clone();
-        let dt_new = DateTime::<Utc>::from_naive_utc_and_offset(naive_utc, offset);
-        Self { datetime: dt_new }
+    pub fn get_expire_time(&self, expire: u64) -> u64 {
+        let current_time = Timestamp::now_utc();
+        let expire_time = current_time + expire;
+        expire_time.datetime.timestamp() as u64
     }
 }

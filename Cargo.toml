@@ -32,5 +32,6 @@ tower-service = "0.3.2"
 validator = { version = "0.18.1", features = ["derive"] }
 erased-serde = "0.4.5"
 tower = { version = "0.4", features = ["util"] }
+jsonwebtoken = "9.3.0"
 
 

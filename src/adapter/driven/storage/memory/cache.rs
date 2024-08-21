@@ -1,10 +1,9 @@
-pub mod repositories;
-
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
+use std::hash::Hash;
 
 use tokio::sync::RwLock;
 
-pub struct Memory<K, V>
+pub struct MemCache<K, V>
 where
     K: Eq + PartialEq + Hash,
     V: Clone,
@@ -12,8 +11,7 @@ where
     items: RwLock<HashMap<K, V>>,
 }
 
-//TODO: make better argument typing (T, &T)
-impl<K, V> Memory<K, V>
+impl<K, V> MemCache<K, V>
 where
     K: Eq + PartialEq + Hash,
     V: Clone,

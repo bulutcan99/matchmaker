@@ -1,10 +1,11 @@
-use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::core::domain::valueobject::date::Timestamp;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Payload {
-    user_id: Uuid,
-    issued_at: DateTime<Local>,
-    expired_at: u64,
+    pub user_id: Uuid,
+    pub issued_at: Timestamp,
+    pub expired_at: u64,
 }

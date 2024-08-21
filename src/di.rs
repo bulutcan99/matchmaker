@@ -3,10 +3,12 @@ use std::sync::Arc;
 use anyhow::Error;
 use sqlx::{Pool, Postgres};
 
-use crate::adapter::driven::db::db_connection::DB;
-use crate::adapter::driven::db::repository::company::CompanyRepository;
-use crate::adapter::driven::db::repository::user::UserRepository;
+use crate::adapter::driven::auth::jwt::JwtTokenHandler;
+use crate::adapter::driven::storage::db::db_connection::DB;
+use crate::adapter::driven::storage::db::repository::company::CompanyRepository;
+use crate::adapter::driven::storage::db::repository::user::UserRepository;
 use crate::config::Settings;
+use crate::core::application::usecase::user::service::UserService;
 
 pub struct Container {
     pub db: Arc<Pool<Postgres>>,
@@ -20,11 +22,7 @@ impl Container {
         let db = DB::new().await?;
         let user_repository = UserRepository::new(Arc::clone(&db.pool));
         let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
-
-        Ok(Container {
-            db: Arc::clone(&db.pool),
-            user_repository,
-            company_repository,
-        })
+        let token_handler = JwtTokenHandler::new();
+        let user_service = UserService::new(user_repository, token_handler);
     }
 }
