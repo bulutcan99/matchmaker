@@ -144,3 +144,7 @@ sqlx-migrate-revert:
 .PHONY: sqlx-prepare
 sqlx-prepare:
 	cargo sqlx prepare --database-url $(DB_URL)
+
+.PHONY: sqlx-reset
+sqlx-reset:
+	cargp sqlx reset

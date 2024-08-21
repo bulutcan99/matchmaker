@@ -7,5 +7,5 @@ use crate::core::domain::valueobject::payload::Payload;
 #[async_trait]
 pub trait TokenMaker: Send + Sync {
     async fn generate_token(&self, user: &User) -> String;
-    async fn decode_token(&self, token: &str) -> Result<Payload, Error>;
+    fn decode_token(&self, token: &str) -> Result<Payload, Error>;
 }

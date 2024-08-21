@@ -8,8 +8,8 @@ use crate::core::domain::entity::user::User;
 use crate::core::port::storage::Repo;
 
 pub struct UserRepository {
-    id_counter: Mutex<i32>,
-    cache: MemCache<i32, User>,
+    id_counter: Mutex<u64>, // `u64` gibi bir sayısal tip kullanmalısınız.
+    cache: MemCache<Uuid, User>,
 }
 
 impl UserRepository {
@@ -29,11 +29,12 @@ impl Repo<User> for UserRepository {
 
         *counter += 1;
 
-        owned_user.set_id(*counter);
+        let new_id = Uuid::new_v4();
+        owned_user.set_id(new_id);
 
-        self.cache.add(owned_user.id, owned_user.to_owned()).await;
+        self.cache.add(new_id, owned_user.clone()).await;
 
-        Ok(owned_user)
+        Ok(new_id)
     }
 
     async fn update(&self, id_str: &str, entity: &User) -> Result<User, Error> {

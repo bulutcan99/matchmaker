@@ -1,21 +1,20 @@
-use matchmaker::core::domain::entity::user::User;
-use matchmaker::core::domain::valueobject::role::Role;
-use matchmaker::core::port::storage::Repo;
-use matchmaker::di::Container;
+use std::sync::Arc;
+
+use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
+use matchmaker::adapter::driven::storage::db::db_connection::DB;
+use matchmaker::adapter::driven::storage::db::repository::company::CompanyRepository;
+use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
+use matchmaker::config::Settings;
+use matchmaker::core::application::usecase::user::service::UserService;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let container = Container::new().await?;
-
-    let user = User::new(
-        "Bulut".to_string(),
-        "Gocer".to_string(),
-        "bc@hotmail.com".to_string(),
-        "PASS1234_!".to_string(),
-        Role::User,
-    );
-    container.user_repository.save(&user).await?;
-    Ok(())
+    Settings::init()?;
+    let db = DB::new().await?;
+    let user_repository = UserRepository::new(Arc::clone(&db.pool));
+    let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
+    let token_handler = JwtTokenHandler::new();
+    let user_service = UserService::new(user_repository, token_handler);
 }
 
 //usecase scenario

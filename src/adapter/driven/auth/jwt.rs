@@ -61,7 +61,7 @@ impl TokenMaker for JwtTokenHandler {
 
         match decoded_token {
             Ok(value) => Ok(value.claims),
-            Err(_) => Err(anyhow!("Decode token error!").into()),
+            Err(_) => Err(anyhow!("Error while decoding token!").into()),
         }
     }
 }
