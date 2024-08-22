@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Error};
 use async_trait::async_trait;
+use serde_derive::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
@@ -10,6 +11,7 @@ use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::port::storage::Repo;
 use crate::core::port::user::UserRepo;
 
+#[derive(Debug, Clone)]
 pub struct UserRepository {
     db: Arc<Pool<Postgres>>,
 }

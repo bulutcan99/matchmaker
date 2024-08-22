@@ -8,6 +8,7 @@ use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::domain::valueobject::payload::Payload;
 use crate::core::port::auth::TokenMaker;
 
+#[derive(Debug, Clone)]
 pub struct JwtTokenHandler {
     secret: String,
 }

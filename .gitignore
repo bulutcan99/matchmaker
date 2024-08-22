@@ -37,8 +37,6 @@ Temporary Items
 
 # Database data
 /data/
-.sqlx
-
 
 # Environment variables
 .env

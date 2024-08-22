@@ -11,6 +11,7 @@ use crate::core::domain::valueobject::sector::Sector;
 use crate::core::port::company::CompanyRepo;
 use crate::core::port::storage::Repo;
 
+#[derive(Debug, Clone)]
 pub struct CompanyRepository {
     db: Arc<Pool<Postgres>>,
 }

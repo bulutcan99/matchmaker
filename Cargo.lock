@@ -1784,6 +1784,7 @@ dependencies = [
  "cargo-watch",
  "chrono",
  "config",
+ "dotenvy",
  "erased-serde",
  "futures-util",
  "http",

@@ -12,6 +12,7 @@ use crate::core::port::auth::TokenMaker;
 use crate::core::port::storage::Repo;
 use crate::core::port::user::{UserManagement, UserRepo};
 
+#[derive(Debug, Clone)]
 pub struct UserService<T, K, U>
 where
     T: TokenMaker,

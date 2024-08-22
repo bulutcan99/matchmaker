@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:latest
@@ -12,10 +14,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - common-network
+      - app-network
 
 networks:
-  common-network:
+  app-network:
     driver: bridge
 
 volumes:

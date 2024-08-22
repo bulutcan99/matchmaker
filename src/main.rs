@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
-use matchmaker::adapter::driven::storage::db::repository::company::CompanyRepository;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
+use matchmaker::adapter::driving::presentation::http::controller::auth::auth_handler::AuthHandler;
 use matchmaker::config::Settings;
 use matchmaker::core::application::usecase::user::service::UserService;
 
@@ -12,9 +12,15 @@ async fn main() -> Result<(), anyhow::Error> {
     Settings::init()?;
     let db = DB::new().await?;
     let user_repository = UserRepository::new(Arc::clone(&db.pool));
-    let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
+    // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
     let token_handler = JwtTokenHandler::new();
-    let user_service = UserService::new(user_repository, token_handler);
+    let user_service = UserService::new(
+        token_handler.clone(),
+        user_repository.clone(),
+        user_repository.clone(),
+    );
+
+    let user_handler = AuthHandler::new(user_service.clone());
 }
 
 //usecase scenario
