@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Error};
 use async_trait::async_trait;
-use serde_derive::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 

@@ -31,6 +31,8 @@ async fn main() -> Result<(), Error> {
         .serve(route.into_make_service())
         .await
         .unwrap();
+
+    Ok(())
 }
 
 //usecase scenario
