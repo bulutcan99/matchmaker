@@ -1,9 +1,10 @@
 use std::{
     fmt,
     io::{self, ErrorKind},
-    net::SocketAddr,
     time::Duration,
 };
+use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 
 use futures_util::future::poll_fn;
 use http::Request;
@@ -22,6 +23,7 @@ use crate::adapter::driving::presentation::http::handle::Handle;
 use crate::adapter::driving::presentation::http::service::{
     MakeService, SendService, TowerToHyperService,
 };
+use crate::config::Settings;
 
 pub struct Server<A = DefaultAcceptor> {
     acceptor: A,
@@ -49,8 +51,8 @@ enum Listener {
     Std(std::net::TcpListener),
 }
 
-pub fn bind(addr: SocketAddr) -> Server {
-    Server::bind(addr)
+pub fn bind() -> Server {
+    Server::bind()
 }
 
 pub fn from_tcp(listener: std::net::TcpListener) -> Server {
@@ -58,7 +60,23 @@ pub fn from_tcp(listener: std::net::TcpListener) -> Server {
 }
 
 impl Server {
-    pub fn bind(addr: SocketAddr) -> Self {
+    pub fn bind() -> Self {
+        let config = Settings::get();
+        let host = config
+            .http
+            .host
+            .clone()
+            .unwrap_or_else(|| "127.0.0.1".to_string());
+        let port = config.http.port.clone().unwrap_or(8080);
+
+        let ip_addr = match IpAddr::from_str(&host) {
+            Ok(ip) => ip,
+            Err(_) => {
+                panic!("Invalid IP address: {}", host);
+            }
+        };
+
+        let addr = SocketAddr::new(ip_addr, port);
         let acceptor = DefaultAcceptor::new();
         let builder = Builder::new(TokioExecutor::new());
         let handle = Handle::new();
@@ -410,9 +428,7 @@ mod tests {
                     }),
                 );
 
-            let addr = SocketAddr::from(([127, 0, 0, 1], 0));
-
-            Server::bind(addr)
+            Server::bind()
                 .handle(server_handle)
                 .serve(app.into_make_service())
                 .await

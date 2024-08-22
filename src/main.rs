@@ -1,14 +1,18 @@
 use std::sync::Arc;
 
+use anyhow::Error;
+
 use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
 use matchmaker::adapter::driving::presentation::http::controller::auth::auth_handler::AuthHandler;
+use matchmaker::adapter::driving::presentation::http::router::Route;
+use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::config::Settings;
 use matchmaker::core::application::usecase::user::service::UserService;
 
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+async fn main() -> Result<(), Error> {
     Settings::init()?;
     let db = DB::new().await?;
     let user_repository = UserRepository::new(Arc::clone(&db.pool));
@@ -21,6 +25,12 @@ async fn main() -> Result<(), anyhow::Error> {
     );
 
     let user_handler = AuthHandler::new(user_service.clone());
+    let auth_handler_arc = Arc::new(user_handler);
+    let route = Route::new(auth_handler_arc).build();
+    Server::bind()
+        .serve(route.into_make_service())
+        .await
+        .unwrap();
 }
 
 //usecase scenario
