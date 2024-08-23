@@ -5,7 +5,7 @@ use anyhow::Error;
 use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
-use matchmaker::adapter::driving::presentation::http::controller::auth::auth_handler::AuthHandler;
+use matchmaker::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use matchmaker::adapter::driving::presentation::http::router::Route;
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::config::Settings;

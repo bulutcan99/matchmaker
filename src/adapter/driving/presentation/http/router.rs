@@ -3,8 +3,8 @@ use std::sync::Arc;
 use axum::{Json, Router};
 use axum::routing::post;
 
-use crate::adapter::driving::presentation::http::controller::auth::auth_handler::AuthHandler;
-use crate::adapter::driving::presentation::http::controller::auth::register::UserRegisterRequest;
+use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
+use crate::adapter::driving::presentation::http::handler::auth::register::UserRegisterRequest;
 use crate::core::application::usecase::user::service::UserService;
 use crate::core::domain::entity::user::User;
 use crate::core::port::auth::TokenMaker;

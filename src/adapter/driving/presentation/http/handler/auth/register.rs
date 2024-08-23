@@ -3,7 +3,7 @@ use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
 use validator::{Validate, ValidationErrors};
 
-use crate::adapter::driving::presentation::http::controller::auth::auth_handler::AuthHandler;
+use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -100,7 +100,7 @@ where
                 };
                 Ok(ApiResponseData::success_with_data(data, StatusCode::OK))
             }
-            Err(_) => Err(ApiError::DbInternalError.into()),
+            Err(err) => Err(ApiResponseData::from(ApiError::UserAlreadyRegistered)),
         }
     }
 }
