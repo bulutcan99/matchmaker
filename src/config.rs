@@ -24,7 +24,6 @@ pub struct HTTP {
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
-    pub debug: bool, // Ensure `debug` is directly a boolean
     pub database: Database,
     pub password: Password,
     pub http: HTTP,
@@ -43,7 +42,11 @@ impl Settings {
         let debug_mode: bool = config.get("debug").unwrap_or(false); // default to false if not found
 
         // Determine which configuration file to use based on the `debug` value
-        let run_mode = if debug_mode { "default" } else { "development" };
+        let run_mode = if debug_mode {
+            "development"
+        } else {
+            "production"
+        };
 
         // Build the configuration again with the determined file
         let s = Config::builder()

@@ -3,7 +3,7 @@ secret_key = "3wT7Kf8JmLq1Zx9Pn2GtHv6YvBcDdRt5"
 secret_jwt = "3wT7Kf8JmLq1Zx9Pn2GtHv6YvBcDdRt6"
 
 [database]
-url = "postgres://postgres:P@ssword@localhost:5432/matchmaker?sslmode=disable"
+url = "postgres://bulutgocer:pass@localhost:5432/matchmaker?sslmode=disable"
 max_conn = 1000
 
 [http]
