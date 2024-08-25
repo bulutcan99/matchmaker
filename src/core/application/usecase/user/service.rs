@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Error};
 use async_trait::async_trait;
+use validator::ValidationErrors;
 
 use crate::adapter::driving::presentation::http::handler::auth::login::{
     UserLoginRequest, UserLoginResponse,
@@ -7,6 +7,7 @@ use crate::adapter::driving::presentation::http::handler::auth::login::{
 use crate::adapter::driving::presentation::http::handler::auth::register::{
     UserRegisterRequest, UserRegisterResponse,
 };
+use crate::core::application::usecase::user::error::{LoginError, RegisterError};
 use crate::core::domain::entity::user::User;
 use crate::core::domain::valueobject::role;
 use crate::core::port::auth::TokenMaker;
@@ -47,14 +48,18 @@ where
     K: Repo<User>,
     U: UserRepo,
 {
-    async fn register(&self, input: &UserRegisterRequest) -> Result<UserRegisterResponse, Error> {
+    async fn register(
+        &self,
+        input: &UserRegisterRequest,
+    ) -> Result<UserRegisterResponse, RegisterError<ValidationErrors>> {
         let found_user = self
             .user_repository
             .find_by_email(input.email.as_str())
-            .await?;
+            .await
+            .map_err(|_| RegisterError::DbInternalError)?;
 
         if found_user.is_some() {
-            return Err(anyhow!("This email is already in use!"));
+            return Err(RegisterError::UserAlreadyRegistered);
         }
 
         let new_user = User::new(
@@ -65,33 +70,37 @@ where
             role::Role::User,
         );
 
-        let registered_id = self.repo_user.save(&new_user).await?;
+        let registered_id = self
+            .repo_user
+            .save(&new_user)
+            .await
+            .map_err(|_| RegisterError::DbInternalError)?;
         let register_response = UserRegisterResponse {
             uuid: registered_id.to_string(),
         };
         Ok(register_response)
     }
-
-    async fn login(&self, input: &UserLoginRequest) -> Result<UserLoginResponse, Error> {
+    async fn login(&self, input: &UserLoginRequest) -> Result<UserLoginResponse, LoginError> {
         let found_user = self
             .user_repository
             .find_by_email(input.email.as_str())
-            .await?;
+            .await
+            .map_err(|_| LoginError::DbInternalError)?;
 
         let found_user = match found_user {
             Some(user) => user,
-            None => return Err(anyhow!("There is no account with the given email!")),
+            None => return Err(LoginError::UserNotFound),
         };
 
-        let is_verified = match found_user.password_hash.verify_password(&input.password) {
-            Ok(true) => true,
-            Ok(false) => return Err(anyhow!("Password is incorrect!")),
-            Err(e) => return Err(anyhow!("Failed to verify password: {}", e)),
-        };
-
-        let access_token = self.token_handler.generate_token(&found_user).await;
-        let result = UserLoginResponse { access_token };
-        Ok(result)
+        match found_user.password_hash.verify_password(&input.password) {
+            Ok(true) => {
+                let access_token = self.token_handler.generate_token(&found_user).await;
+                let result = UserLoginResponse { access_token };
+                Ok(result)
+            }
+            Ok(false) => Err(LoginError::BadCredentials),
+            Err(_) => Err(LoginError::JWTEncodingError),
+        }
     }
 
     // async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error> {

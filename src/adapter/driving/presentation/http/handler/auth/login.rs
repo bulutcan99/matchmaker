@@ -4,10 +4,10 @@ use serde::Serialize;
 use serde_derive::Deserialize;
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
-use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
+use crate::core::application::usecase::user::error::LoginError;
 use crate::core::port::user::UserManagement;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -20,31 +20,23 @@ pub struct UserLoginRequest {
 pub struct UserLoginResponse {
     pub access_token: String,
 }
-
-#[derive(Deserialize, Debug, Clone)]
-pub enum ApiError {
-    UserNotFound,
-    BadCredentials,
-    UserProviderNotValid,
-    InternalError,
-    JWTEncodingError,
-}
-
-impl<E> From<ApiError> for ApiResponseData<E>
+impl<E> From<LoginError> for ApiResponseData<E>
 where
     E: Serialize + 'static,
 {
-    fn from(value: ApiError) -> Self {
+    fn from(value: LoginError) -> Self {
         match value {
-            ApiError::UserNotFound => {
+            LoginError::UserNotFound => {
                 ApiResponseData::error(None, "user not found", StatusCode::NOT_ACCEPTABLE)
             }
-            ApiError::BadCredentials => ApiResponseData::status_code(StatusCode::FORBIDDEN),
-            ApiError::UserProviderNotValid => {
+            LoginError::BadCredentials => {
+                ApiResponseData::error(None, "bad credentials", StatusCode::FORBIDDEN)
+            }
+            LoginError::UserProviderNotValid => {
                 ApiResponseData::error(None, "bad provider", StatusCode::BAD_REQUEST)
             }
-            ApiError::InternalError | ApiError::JWTEncodingError => {
-                ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
+            LoginError::DbInternalError | LoginError::JWTEncodingError => {
+                ApiResponseData::error(None, "internal error", StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
     }
@@ -57,16 +49,14 @@ where
     pub async fn login(
         &self,
         login_user: Json<UserLoginRequest>,
-    ) -> ApiResponse<UserLoginResponse, ResponseError> {
+    ) -> ApiResponse<UserLoginResponse, LoginError> {
         let result = self.user_service.login(&login_user).await;
         match result {
             Ok(response_data) => Ok(ApiResponseData::success_with_data(
                 response_data,
                 StatusCode::OK,
             )),
-            Err(_) => Err(ApiResponseData::status_code(
-                StatusCode::INTERNAL_SERVER_ERROR,
-            )),
+            Err(error) => Err(ApiResponseData::from(error)),
         }
     }
 }

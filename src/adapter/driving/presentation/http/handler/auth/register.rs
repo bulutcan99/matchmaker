@@ -8,6 +8,7 @@ use crate::adapter::driving::presentation::http::response::field_error::Response
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
+use crate::core::application::usecase::user::error::RegisterError;
 use crate::core::port::user::UserManagement;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -45,26 +46,18 @@ pub struct UserRegisterResponse {
     pub uuid: String,
 }
 
-#[derive(Debug)]
-pub enum ApiError {
-    BadClientData(ValidationErrors),
-    UserAlreadyRegistered,
-    DbInternalError,
-    HashingError,
-}
-
-impl From<ApiError> for ApiResponseData<ResponseError> {
-    fn from(value: ApiError) -> Self {
+impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
+    fn from(value: RegisterError<ValidationErrors>) -> Self {
         match value {
-            ApiError::BadClientData(err) => ApiResponseData::error(
+            RegisterError::BadClientData(err) => ApiResponseData::error(
                 Some(ResponseError::from(err)),
                 "invalid data from client",
                 StatusCode::BAD_REQUEST,
             ),
-            ApiError::UserAlreadyRegistered => {
+            RegisterError::UserAlreadyRegistered => {
                 ApiResponseData::error(None, "user already registered", StatusCode::FORBIDDEN)
             }
-            ApiError::DbInternalError | ApiError::HashingError => {
+            RegisterError::DbInternalError | RegisterError::HashingError => {
                 ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
@@ -79,16 +72,17 @@ where
         &self,
         register_user: Json<UserRegisterRequest>,
     ) -> ApiResponse<UserRegisterResponse, ResponseError> {
-        register_user.validate().map_err(ApiError::BadClientData)?;
+        register_user
+            .validate()
+            .map_err(RegisterError::BadClientData)?;
+
         let result = self.user_service.register(&register_user).await;
         match result {
             Ok(registered_user) => Ok(ApiResponseData::success_with_data(
                 registered_user,
                 StatusCode::OK,
             )),
-            Err(_) => Err(ApiResponseData::status_code(
-                StatusCode::INTERNAL_SERVER_ERROR,
-            )),
+            Err(error) => Err(ApiResponseData::from(error)),
         }
     }
 }
