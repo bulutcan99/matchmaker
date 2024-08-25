@@ -8,7 +8,6 @@ use crate::adapter::driving::presentation::http::response::field_error::Response
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
-use crate::core::application::usecase::user::dto::UserRegisterInput;
 use crate::core::port::user::UserManagement;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -42,7 +41,7 @@ pub struct UserRegisterRequest {
 }
 
 #[derive(Serialize, Debug)]
-pub struct RegisterResponseObject {
+pub struct UserRegisterResponse {
     pub uuid: String,
 }
 
@@ -52,7 +51,6 @@ pub enum ApiError {
     UserAlreadyRegistered,
     DbInternalError,
     HashingError,
-    JWTEncodingError,
 }
 
 impl From<ApiError> for ApiResponseData<ResponseError> {
@@ -66,7 +64,7 @@ impl From<ApiError> for ApiResponseData<ResponseError> {
             ApiError::UserAlreadyRegistered => {
                 ApiResponseData::error(None, "user already registered", StatusCode::FORBIDDEN)
             }
-            ApiError::DbInternalError | ApiError::HashingError | ApiError::JWTEncodingError => {
+            ApiError::DbInternalError | ApiError::HashingError => {
                 ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
@@ -80,27 +78,17 @@ where
     pub async fn register(
         &self,
         register_user: Json<UserRegisterRequest>,
-    ) -> ApiResponse<RegisterResponseObject, ResponseError> {
+    ) -> ApiResponse<UserRegisterResponse, ResponseError> {
         register_user.validate().map_err(ApiError::BadClientData)?;
-
-        let result = self
-            .user_service
-            .register(&UserRegisterInput {
-                email: register_user.email.clone(),
-                first_name: register_user.first_name.clone(),
-                last_name: register_user.last_name.clone(),
-                password: register_user.password.clone(),
-            })
-            .await;
-
+        let result = self.user_service.register(&register_user).await;
         match result {
-            Ok(user_id) => {
-                let data = RegisterResponseObject {
-                    uuid: String::from(user_id),
-                };
-                Ok(ApiResponseData::success_with_data(data, StatusCode::OK))
-            }
-            Err(err) => Err(ApiResponseData::from(ApiError::UserAlreadyRegistered)),
+            Ok(registered_user) => Ok(ApiResponseData::success_with_data(
+                registered_user,
+                StatusCode::OK,
+            )),
+            Err(_) => Err(ApiResponseData::status_code(
+                StatusCode::INTERNAL_SERVER_ERROR,
+            )),
         }
     }
 }

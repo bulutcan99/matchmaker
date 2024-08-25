@@ -1,10 +1,11 @@
 use anyhow::{anyhow, Error};
 use async_trait::async_trait;
-use uuid::Uuid;
 
-use crate::core::application::usecase::user::dto::{
-    AuthenticatedUserOutput, GetProfileInput, GetProfileOutput, UpdateUserPofileInput,
-    UserLoginInput, UserRegisterInput,
+use crate::adapter::driving::presentation::http::handler::auth::login::{
+    UserLoginRequest, UserLoginResponse,
+};
+use crate::adapter::driving::presentation::http::handler::auth::register::{
+    UserRegisterRequest, UserRegisterResponse,
 };
 use crate::core::domain::entity::user::User;
 use crate::core::domain::valueobject::role;
@@ -46,7 +47,7 @@ where
     K: Repo<User>,
     U: UserRepo,
 {
-    async fn register(&self, input: &UserRegisterInput) -> Result<Uuid, Error> {
+    async fn register(&self, input: &UserRegisterRequest) -> Result<UserRegisterResponse, Error> {
         let found_user = self
             .user_repository
             .find_by_email(input.email.as_str())
@@ -65,18 +66,39 @@ where
         );
 
         let registered_id = self.repo_user.save(&new_user).await?;
-        Ok(registered_id)
+        let register_response = UserRegisterResponse {
+            uuid: registered_id.to_string(),
+        };
+        Ok(register_response)
     }
 
-    async fn login(&self, input: &UserLoginInput) -> Result<AuthenticatedUserOutput, Error> {
-        todo!()
+    async fn login(&self, input: &UserLoginRequest) -> Result<UserLoginResponse, Error> {
+        let found_user = self
+            .user_repository
+            .find_by_email(input.email.as_str())
+            .await?;
+
+        let found_user = match found_user {
+            Some(user) => user,
+            None => return Err(anyhow!("There is no account with the given email!")),
+        };
+
+        let is_verified = match found_user.password_hash.verify_password(&input.password) {
+            Ok(true) => true,
+            Ok(false) => return Err(anyhow!("Password is incorrect!")),
+            Err(e) => return Err(anyhow!("Failed to verify password: {}", e)),
+        };
+
+        let access_token = self.token_handler.generate_token(&found_user).await;
+        let result = UserLoginResponse { access_token };
+        Ok(result)
     }
 
-    async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error> {
-        todo!()
-    }
-
-    async fn get_profile(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error> {
-        todo!()
-    }
+    // async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error> {
+    //     todo!()
+    // }
+    //
+    // async fn get_profile(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error> {
+    //     todo!()
+    // }
 }

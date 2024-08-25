@@ -4,6 +4,7 @@ use axum::{Json, Router};
 use axum::routing::post;
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
+use crate::adapter::driving::presentation::http::handler::auth::login::UserLoginRequest;
 use crate::adapter::driving::presentation::http::handler::auth::register::UserRegisterRequest;
 use crate::core::application::usecase::user::service::UserService;
 use crate::core::domain::entity::user::User;
@@ -35,13 +36,27 @@ where
 
         Router::new().nest(
             "/auth",
-            Router::new().route(
-                "/register",
-                post(move |register_user: Json<UserRegisterRequest>| {
-                    let handler = auth_handler.clone();
-                    async move { handler.register(register_user).await }
-                }),
-            ),
+            Router::new()
+                .route(
+                    "/register",
+                    post({
+                        let handler = auth_handler.clone();
+                        move |register_user: Json<UserRegisterRequest>| {
+                            let handler = handler.clone();
+                            async move { handler.register(register_user).await }
+                        }
+                    }),
+                )
+                .route(
+                    "/login",
+                    post({
+                        let handler = auth_handler.clone();
+                        move |login_user: Json<UserLoginRequest>| {
+                            let handler = handler.clone();
+                            async move { handler.login(login_user).await }
+                        }
+                    }),
+                ),
         )
     }
 }
