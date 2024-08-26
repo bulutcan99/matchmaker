@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
-axum = { version = "0.7.5", features = ["headers", "macros"] }
+axum = { version = "0.7.5", features = ["macros"] }
 cargo-watch = "8.5.2"
 chrono = { version = "0.4", features = ["serde"] }
 log = "0.4.22"
@@ -34,5 +34,6 @@ erased-serde = "0.4.5"
 tower = { version = "0.4", features = ["util"] }
 jsonwebtoken = "9.3.0"
 dotenvy = "0.15.7"
+axum-extra = "0.9.3"
 
 

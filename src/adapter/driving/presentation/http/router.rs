@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
-use axum::{Json, Router};
-use axum::routing::post;
+use axum::{
+	extract::Json,
+	Router,
+	routing::{get, post},
+};
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::handler::auth::login::UserLoginRequest;
@@ -54,6 +57,16 @@ where
                         move |login_user: Json<UserLoginRequest>| {
                             let handler = handler.clone();
                             async move { handler.login(login_user).await }
+                        }
+                    }),
+                )
+                .route(
+                    "/me",
+                    get({
+                        let handler = auth_handler.clone();
+                        move |headers| {
+                            let handler = handler.clone();
+                            async move { handler.me(headers).await }
                         }
                     }),
                 ),
