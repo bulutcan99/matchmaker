@@ -4,10 +4,11 @@ use validator::ValidationErrors;
 use crate::adapter::driving::presentation::http::handler::auth::login::{
     UserLoginRequest, UserLoginResponse,
 };
+use crate::adapter::driving::presentation::http::handler::auth::me::UserMeResponse;
 use crate::adapter::driving::presentation::http::handler::auth::register::{
     UserRegisterRequest, UserRegisterResponse,
 };
-use crate::core::application::usecase::auth::error::{LoginError, RegisterError};
+use crate::core::application::usecase::auth::error::{LoginError, MeError, RegisterError};
 use crate::core::domain::entity::user::User;
 use crate::core::domain::valueobject::role;
 use crate::core::port::auth::TokenMaker;
@@ -103,8 +104,21 @@ where
         }
     }
 
-    async fn me(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error> {
-        todo!()
+    async fn me(&self, token: &str) -> Result<UserMeResponse, MeError> {
+        let decode_token = self
+            .token_handler
+            .decode_token(token)
+            .map_err(|_| MeError::InvalidIdFormat)?;
+
+        let user_id_str = decode_token.sub;
+        let user = self
+            .repo_user
+            .find_by_id(user_id_str.as_str())
+            .await
+            .map_err(|_| MeError::DbInternalError)?
+            .ok_or(MeError::UserNotFound)?;
+        let user_me = UserMeResponse { user };
+        Ok(user_me)
     }
     // async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error> {
     //     todo!()

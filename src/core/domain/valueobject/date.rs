@@ -28,6 +28,7 @@ impl Add<u64> for Timestamp {
         Timestamp::new(new_datetime)
     }
 }
+
 impl Timestamp {
     pub fn new(datetime: DateTime<Utc>) -> Self {
         Self { datetime }
@@ -55,5 +56,9 @@ impl Timestamp {
         let current_time = Timestamp::now_utc();
         let expire_time = current_time + expire;
         expire_time.datetime.timestamp() as u64
+    }
+
+    pub fn to_unix_timestamp(&self) -> u64 {
+        self.datetime.timestamp() as u64
     }
 }

@@ -26,7 +26,7 @@ impl JwtTokenHandler {
     }
 
     pub fn get_expire_time(&self) -> u64 {
-        let expire = 1000 * 60 * 60 * 5; // 5 hours
+        let expire = 1000 * 60 * 60 * 5;
         let current_time = Timestamp::now_utc();
         let expire_time = current_time + expire;
         expire_time.datetime.timestamp() as u64
@@ -37,9 +37,9 @@ impl JwtTokenHandler {
 impl TokenMaker for JwtTokenHandler {
     async fn generate_token(&self, user: &User) -> String {
         let payload = Payload {
-            user_id: user.id.unwrap_or_default(),
-            expired_at: self.get_expire_time(),
-            issued_at: Timestamp::now_utc(),
+            sub: user.id.unwrap_or_default().to_string(),
+            iat: Timestamp::now_utc().to_unix_timestamp(),
+            exp: self.get_expire_time(),
         };
 
         let token = encode(
@@ -53,15 +53,18 @@ impl TokenMaker for JwtTokenHandler {
     }
 
     fn decode_token(&self, token: &str) -> Result<Payload, Error> {
+        let token = token.trim_start_matches("Bearer ");
+        let mut validation = Validation::default();
+        validation.validate_exp = true;
         let decoded_token = decode::<Payload>(
             token,
             &DecodingKey::from_secret(self.secret.as_ref()),
-            &Validation::default(),
+            &validation,
         );
 
         match decoded_token {
             Ok(value) => Ok(value.claims),
-            Err(_) => Err(anyhow!("Error while decoding token!").into()),
+            Err(e) => Err(anyhow!("Error while decoding token: {:?}", e).into()),
         }
     }
 }

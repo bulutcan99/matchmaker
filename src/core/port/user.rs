@@ -5,10 +5,11 @@ use validator::ValidationErrors;
 use crate::adapter::driving::presentation::http::handler::auth::login::{
     UserLoginRequest, UserLoginResponse,
 };
+use crate::adapter::driving::presentation::http::handler::auth::me::UserMeResponse;
 use crate::adapter::driving::presentation::http::handler::auth::register::{
     UserRegisterRequest, UserRegisterResponse,
 };
-use crate::core::application::usecase::auth::error::{LoginError, RegisterError};
+use crate::core::application::usecase::auth::error::{LoginError, MeError, RegisterError};
 use crate::core::domain::entity::user::User;
 
 #[async_trait]
@@ -23,6 +24,6 @@ pub trait UserManagement: Send + Sync {
         input: &UserRegisterRequest,
     ) -> Result<UserRegisterResponse, RegisterError<ValidationErrors>>;
     async fn login(&self, input: &UserLoginRequest) -> Result<UserLoginResponse, LoginError>;
+    async fn me(&self, token: &str) -> Result<UserMeResponse, MeError>;
     // async fn update_profile(&self, input: &UserRegisterRequest) -> Result<(), Error>;
-    // async fn get_profile(&self, input: &UserRegisterRequest) -> Result<GetProfileOutput, Error>;
 }

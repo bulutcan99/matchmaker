@@ -1,8 +1,8 @@
-use erased_serde::Serialize;
 use http::{HeaderMap, StatusCode};
 use serde_derive::{Deserialize, Serialize};
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
+use crate::adapter::driving::presentation::http::response::error::ApiResponseError;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -16,10 +16,7 @@ pub struct UserMeResponse {
     pub user: User,
 }
 
-impl<E> From<MeError> for ApiResponseData<E>
-where
-    E: Serialize + 'static,
-{
+impl From<MeError> for ApiResponseData<ResponseError> {
     fn from(value: MeError) -> Self {
         match value {
             MeError::InvalidJwtToken | MeError::InvalidIdFormat => {
@@ -39,28 +36,29 @@ where
 {
     pub async fn me(&self, headers: HeaderMap) -> ApiResponse<UserMeResponse, ResponseError> {
         let auth_header = match headers.get("Authorization") {
-            Some(header_value) => header_value.to_str().ok(),
-            None => None,
-        };
-
-        let token = match auth_header {
-            Some(value) => {
-                if value.starts_with("Bearer ") {
-                    Some(value.trim_start_matches("Bearer ").to_string())
-                } else {
-                    None
+            Some(header_value) => match header_value.to_str() {
+                Ok(value) => value,
+                Err(_) => {
+                    let error_body = ApiResponseError::simple_error("Invalid Authorization header");
+                    return Err(ApiResponseData::Error {
+                        error: error_body,
+                        status: StatusCode::BAD_REQUEST,
+                    });
                 }
+            },
+            None => {
+                let error_body = ApiResponseError::simple_error("Authorization header missing");
+                return Err(ApiResponseData::Error {
+                    error: error_body,
+                    status: StatusCode::UNAUTHORIZED,
+                });
             }
-            None => None,
         };
 
-        let token = match token {
-            Some(t) => t,
-            None => {
-                return ApiResponse::Err(ResponseError::Unauthorized(
-                    "Invalid or missing token".into(),
-                ))
-            }
-        };
+        let result = self.user_service.me(auth_header).await;
+        match result {
+            Ok(user) => Ok(ApiResponseData::success_with_data(user, StatusCode::OK)),
+            Err(error) => Err(ApiResponseData::from(error)),
+        }
     }
 }
