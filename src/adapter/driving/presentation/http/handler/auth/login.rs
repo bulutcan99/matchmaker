@@ -7,7 +7,7 @@ use crate::adapter::driving::presentation::http::handler::auth::auth_handler::Au
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
-use crate::core::application::usecase::user::error::LoginError;
+use crate::core::application::usecase::auth::error::LoginError;
 use crate::core::port::user::UserManagement;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

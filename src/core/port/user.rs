@@ -8,7 +8,7 @@ use crate::adapter::driving::presentation::http::handler::auth::login::{
 use crate::adapter::driving::presentation::http::handler::auth::register::{
     UserRegisterRequest, UserRegisterResponse,
 };
-use crate::core::application::usecase::user::error::{LoginError, RegisterError};
+use crate::core::application::usecase::auth::error::{LoginError, RegisterError};
 use crate::core::domain::entity::user::User;
 
 #[async_trait]

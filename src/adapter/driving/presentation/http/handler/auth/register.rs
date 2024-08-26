@@ -8,7 +8,7 @@ use crate::adapter::driving::presentation::http::response::field_error::Response
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
-use crate::core::application::usecase::user::error::RegisterError;
+use crate::core::application::usecase::auth::error::RegisterError;
 use crate::core::port::user::UserManagement;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]

@@ -9,7 +9,7 @@ use matchmaker::adapter::driving::presentation::http::handler::auth::auth_handle
 use matchmaker::adapter::driving::presentation::http::router::Route;
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::config::Settings;
-use matchmaker::core::application::usecase::user::service::UserService;
+use matchmaker::core::application::usecase::auth::service::UserService;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

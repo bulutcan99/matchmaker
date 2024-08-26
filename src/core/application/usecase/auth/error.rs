@@ -16,3 +16,11 @@ pub enum LoginError {
     DbInternalError,
     JWTEncodingError,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum MeError {
+    InvalidJwtToken,
+    InvalidIdFormat,
+    DbInternalError,
+    UserNotFound,
+}

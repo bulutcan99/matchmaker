@@ -6,7 +6,7 @@ use axum::routing::post;
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::handler::auth::login::UserLoginRequest;
 use crate::adapter::driving::presentation::http::handler::auth::register::UserRegisterRequest;
-use crate::core::application::usecase::user::service::UserService;
+use crate::core::application::usecase::auth::service::UserService;
 use crate::core::domain::entity::user::User;
 use crate::core::port::auth::TokenMaker;
 use crate::core::port::storage::Repo;

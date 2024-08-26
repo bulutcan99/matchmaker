@@ -7,7 +7,7 @@ use crate::adapter::driving::presentation::http::handler::auth::login::{
 use crate::adapter::driving::presentation::http::handler::auth::register::{
     UserRegisterRequest, UserRegisterResponse,
 };
-use crate::core::application::usecase::user::error::{LoginError, RegisterError};
+use crate::core::application::usecase::auth::error::{LoginError, RegisterError};
 use crate::core::domain::entity::user::User;
 use crate::core::domain::valueobject::role;
 use crate::core::port::auth::TokenMaker;
@@ -103,11 +103,11 @@ where
         }
     }
 
+    async fn me(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error> {
+        todo!()
+    }
     // async fn update_profile(&self, input: &UpdateUserPofileInput) -> Result<(), Error> {
     //     todo!()
     // }
     //
-    // async fn get_profile(&self, input: &GetProfileInput) -> Result<GetProfileOutput, Error> {
-    //     todo!()
-    // }
 }

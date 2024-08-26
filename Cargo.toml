@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
-axum = { version = "0.7.5" }
+axum = { version = "0.7.5", features = ["headers", "macros"] }
 cargo-watch = "8.5.2"
 chrono = { version = "0.4", features = ["serde"] }
 log = "0.4.22"
