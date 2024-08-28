@@ -1,36 +1,28 @@
 use std::sync::Arc;
 
 use axum::{
-	extract::Json,
-	Router,
-	routing::{get, post},
+    extract::Json,
+    Router,
+    routing::{get, post},
 };
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::handler::auth::login::UserLoginRequest;
 use crate::adapter::driving::presentation::http::handler::auth::register::UserRegisterRequest;
-use crate::core::application::usecase::auth::service::UserService;
-use crate::core::domain::entity::user::User;
-use crate::core::port::auth::TokenMaker;
-use crate::core::port::storage::Repo;
-use crate::core::port::user::UserRepo;
+use crate::core::port::user::UserManagement;
 
-pub struct Route<T, K, U>
+pub struct Route<S>
 where
-    T: TokenMaker + 'static,
-    K: Repo<User> + 'static,
-    U: UserRepo + 'static,
+    S: UserManagement + 'static,
 {
-    auth_handler: Arc<AuthHandler<UserService<T, K, U>>>,
+    auth_handler: Arc<AuthHandler<S>>,
 }
 
-impl<T, K, U> Route<T, K, U>
+impl<S> Route<S>
 where
-    T: TokenMaker + 'static,
-    K: Repo<User> + 'static,
-    U: UserRepo + 'static,
+    S: UserManagement + 'static,
 {
-    pub fn new(auth_handler: Arc<AuthHandler<UserService<T, K, U>>>) -> Self {
+    pub fn new(auth_handler: Arc<AuthHandler<S>>) -> Self {
         Self { auth_handler }
     }
 

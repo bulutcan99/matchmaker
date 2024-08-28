@@ -4,6 +4,7 @@ use serde::Serialize;
 use serde_derive::Deserialize;
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
+use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
@@ -49,7 +50,7 @@ where
     pub async fn login(
         &self,
         login_user: Json<UserLoginRequest>,
-    ) -> ApiResponse<UserLoginResponse, LoginError> {
+    ) -> ApiResponse<UserLoginResponse, ResponseError> {
         let result = self.user_service.login(&login_user).await;
         match result {
             Ok(response_data) => Ok(ApiResponseData::success_with_data(
