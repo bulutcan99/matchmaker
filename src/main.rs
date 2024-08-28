@@ -6,7 +6,7 @@ use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
 use matchmaker::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
-use matchmaker::adapter::driving::presentation::http::router::Route;
+use matchmaker::adapter::driving::presentation::http::router::router;
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::config::Settings;
 use matchmaker::core::application::usecase::auth::service::UserService;
@@ -26,7 +26,7 @@ async fn main() -> Result<(), Error> {
 
     let user_handler = AuthHandler::new(user_service.clone());
     let auth_handler_arc = Arc::new(user_handler);
-    let route = Route::new(auth_handler_arc).build();
+    let route = router();
     Server::bind()
         .serve(route.into_make_service())
         .await

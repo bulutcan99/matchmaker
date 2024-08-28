@@ -1,7 +1,11 @@
+use std::sync::Arc;
+
+use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use serde::Serialize;
 use serde_derive::Deserialize;
+use tower_cookies::Cookies;
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
@@ -48,10 +52,11 @@ where
     S: UserManagement,
 {
     pub async fn login(
-        &self,
         login_user: Json<UserLoginRequest>,
+        State(user_service): State<Arc<S>>,
+        cookies: Cookies,
     ) -> ApiResponse<UserLoginResponse, ResponseError> {
-        let result = self.user_service.login(&login_user).await;
+        let result = user_service.login(&login_user).await;
         match result {
             Ok(response_data) => Ok(ApiResponseData::success_with_data(
                 response_data,

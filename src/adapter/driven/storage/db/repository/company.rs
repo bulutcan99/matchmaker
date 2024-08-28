@@ -9,7 +9,6 @@ use crate::core::domain::entity::company::Company;
 use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::domain::valueobject::sector::Sector;
 use crate::core::port::company::CompanyRepo;
-use crate::core::port::storage::Repo;
 
 #[derive(Debug, Clone)]
 pub struct CompanyRepository {
@@ -23,7 +22,7 @@ impl CompanyRepository {
 }
 
 #[async_trait]
-impl Repo<Company> for CompanyRepository {
+impl CompanyRepo for CompanyRepository {
     async fn save(&self, company: &Company) -> Result<Uuid, Error> {
         let saved_company_id = sqlx::query_scalar!(
             r#"
@@ -175,10 +174,7 @@ impl Repo<Company> for CompanyRepository {
             None => Ok(None),
         }
     }
-}
 
-#[async_trait]
-impl CompanyRepo for CompanyRepository {
     async fn find_by_name(&self, name: &str) -> Result<Option<Company>, Error> {
         let row = sqlx::query!(
             r#"

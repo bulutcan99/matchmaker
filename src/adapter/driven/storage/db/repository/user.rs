@@ -7,7 +7,6 @@ use uuid::Uuid;
 
 use crate::core::domain::entity::user::User;
 use crate::core::domain::valueobject::date::Timestamp;
-use crate::core::port::storage::Repo;
 use crate::core::port::user::UserRepo;
 
 #[derive(Debug, Clone)]
@@ -22,7 +21,7 @@ impl UserRepository {
 }
 
 #[async_trait]
-impl Repo<User> for UserRepository {
+impl UserRepo for UserRepository {
     async fn save(&self, user: &User) -> Result<Uuid, Error> {
         let saved_user_id = sqlx::query_scalar!(
         r#"
@@ -124,10 +123,7 @@ impl Repo<User> for UserRepository {
             Ok(None)
         }
     }
-}
 
-#[async_trait]
-impl UserRepo for UserRepository {
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, Error> {
         let user = sqlx::query_as!(
             User,

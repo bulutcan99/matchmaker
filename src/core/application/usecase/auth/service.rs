@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use validator::ValidationErrors;
 
@@ -12,42 +14,36 @@ use crate::core::application::usecase::auth::error::{LoginError, MeError, Regist
 use crate::core::domain::entity::user::User;
 use crate::core::domain::valueobject::role;
 use crate::core::port::auth::TokenMaker;
-use crate::core::port::storage::Repo;
 use crate::core::port::user::{UserManagement, UserRepo};
 
 #[derive(Debug, Clone)]
-pub struct UserService<T, K, U>
+pub struct UserService<T, K>
 where
     T: TokenMaker,
-    K: Repo<User>,
-    U: UserRepo,
+    K: UserRepo,
 {
-    token_handler: T,
-    repo_user: K,
-    user_repository: U,
+    token_handler: Arc<T>,
+    user_repository: Arc<K>,
 }
 
-impl<T, K, U> UserService<T, K, U>
+impl<T, K> UserService<T, K>
 where
     T: TokenMaker,
-    K: Repo<User>,
-    U: UserRepo,
+    K: UserRepo,
 {
-    pub fn new(token_handler: T, repo_user: K, user_repository: U) -> Self {
+    pub fn new(token_handler: Arc<T>, user_repository: Arc<K>) -> Self {
         Self {
             token_handler,
-            repo_user,
             user_repository,
         }
     }
 }
 
 #[async_trait]
-impl<T, K, U> UserManagement for UserService<T, K, U>
+impl<T, K> UserManagement for UserService<T, K>
 where
     T: TokenMaker,
-    K: Repo<User>,
-    U: UserRepo,
+    K: UserRepo,
 {
     async fn register(
         &self,
@@ -72,7 +68,7 @@ where
         );
 
         let registered_id = self
-            .repo_user
+            .user_repository
             .save(&new_user)
             .await
             .map_err(|_| RegisterError::DbInternalError)?;
@@ -112,7 +108,7 @@ where
 
         let user_id_str = decode_token.sub;
         let user = self
-            .repo_user
+            .user_repository
             .find_by_id(user_id_str.as_str())
             .await
             .map_err(|_| MeError::DbInternalError)?

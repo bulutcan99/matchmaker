@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
+use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
+use tower_cookies::Cookies;
 use validator::{Validate, ValidationErrors};
 
 use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
@@ -69,14 +73,15 @@ where
     S: UserManagement,
 {
     pub async fn register(
-        &self,
         register_user: Json<UserRegisterRequest>,
+        State(user_service): State<Arc<S>>,
+        cookies: Cookies,
     ) -> ApiResponse<UserRegisterResponse, ResponseError> {
         register_user
             .validate()
             .map_err(RegisterError::BadClientData)?;
 
-        let result = self.user_service.register(&register_user).await;
+        let result = user_service.register(&register_user).await;
         match result {
             Ok(registered_user) => Ok(ApiResponseData::success_with_data(
                 registered_user,

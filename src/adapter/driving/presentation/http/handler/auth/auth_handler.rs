@@ -1,18 +1,20 @@
+use std::sync::Arc;
+
 use crate::core::port::user::UserManagement;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct AuthHandler<S>
 where
-    S: UserManagement + 'static,
+    S: UserManagement,
 {
-    pub user_service: S,
+    pub user_service: Arc<S>,
 }
 
 impl<S> AuthHandler<S>
 where
-    S: UserManagement + 'static,
+    S: UserManagement,
 {
-    pub fn new(user_management: S) -> Self {
+    pub fn new(user_management: Arc<S>) -> Self {
         Self {
             user_service: user_management,
         }

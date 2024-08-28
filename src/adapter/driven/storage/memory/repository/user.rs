@@ -5,10 +5,9 @@ use uuid::Uuid;
 
 use crate::adapter::driven::storage::memory::cache::MemCache;
 use crate::core::domain::entity::user::User;
-use crate::core::port::storage::Repo;
 
 pub struct UserRepository {
-    id_counter: Mutex<u64>, // `u64` gibi bir sayısal tip kullanmalısınız.
+    id_counter: Mutex<u64>,
     cache: MemCache<Uuid, User>,
 }
 
