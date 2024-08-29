@@ -36,4 +36,7 @@ jsonwebtoken = "9.3.0"
 dotenvy = "0.15.7"
 axum-extra = "0.9.3"
 tower-cookies = "0.10.0"
+base64 = "0.21.7"
+hmac = "0.12.1"
+sha2 = "0.10.8"
 

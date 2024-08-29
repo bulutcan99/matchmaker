@@ -66,7 +66,7 @@ impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
     }
 }
 
-pub async fn register<S>(
+pub async fn register_handler<S>(
     State(user_service): State<Arc<S>>,
     register_user: Json<UserRegisterRequest>,
 ) -> ApiResponse<UserRegisterResponse, ResponseError>

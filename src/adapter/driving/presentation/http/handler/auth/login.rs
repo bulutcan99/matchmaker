@@ -5,6 +5,7 @@ use axum::Json;
 use http::StatusCode;
 use serde::Serialize;
 use serde_derive::Deserialize;
+use tower_cookies::Cookies;
 
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
@@ -45,8 +46,9 @@ where
     }
 }
 
-pub async fn login<S>(
+pub async fn login_handler<S>(
     State(user_service): State<Arc<S>>,
+    cookies: Cookies,
     login_user: Json<UserLoginRequest>,
 ) -> ApiResponse<UserLoginResponse, ResponseError>
 where
@@ -54,10 +56,14 @@ where
 {
     let result = user_service.login(&login_user).await;
     match result {
-        Ok(response_data) => Ok(ApiResponseData::success_with_data(
-            response_data,
-            StatusCode::OK,
-        )),
+        Ok(response_data) => {
+            token::set_token_cookie(&cookies, &user.username, user.token_salt)?;
+
+            Ok(ApiResponseData::success_with_data(
+                response_data,
+                StatusCode::OK,
+            ))
+        }
         Err(error) => Err(ApiResponseData::from(error)),
     }
 }

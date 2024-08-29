@@ -1,14 +1,14 @@
+use anyhow::Error;
 use tower_cookies::{Cookie, Cookies};
+use uuid::Uuid;
 
-use crate::core::domain::valueobject::payload::Payload;
-
-pub mod login;
-pub mod me;
-pub mod register;
+pub type Result<T> = core::result::Result<T, Error>;
 
 pub(crate) const AUTH_TOKEN: &str = "auth-token";
 
-pub(crate) fn set_token_cookie(cookies: &Cookies, payload: &Payload) -> Result<()> {
+pub(crate) fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Result<()> {
+    let token = generate_web_token(user, salt)?;
+
     let mut cookie = Cookie::new(AUTH_TOKEN, token.to_string());
     cookie.set_http_only(true);
     cookie.set_path("/");

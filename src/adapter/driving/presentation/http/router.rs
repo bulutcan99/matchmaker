@@ -3,8 +3,10 @@ use std::sync::Arc;
 use axum::Router;
 use axum::routing::post;
 
-use crate::adapter::driving::presentation::http::handler::auth::login::login;
-use crate::adapter::driving::presentation::http::handler::auth::register::register;
+use crate::adapter::driving::presentation::http::handler::auth::login::{login, login_handler};
+use crate::adapter::driving::presentation::http::handler::auth::register::{
+  register, register_handler,
+};
 use crate::core::port::user::UserManagement;
 
 pub struct AppState<S>
@@ -31,19 +33,22 @@ where
     Router::new()
         .route(
             "/register",
-            post(register).with_state(state.user_service.clone()),
+            post(register_handler).with_state(state.user_service.clone()),
         )
-        .route("/login", post(login).with_state(state.user_service.clone()))
+        .route(
+            "/login",
+            post(login_handler).with_state(state.user_service.clone()),
+        )
 }
-//
-// pub fn protected_routes<S>(state: Arc<AppState<S>>) -> Router
-// where
-//     S: UserManagement + Clone + Send + Sync + 'static,
-// {
-//     Router::new()
-//         .route("/me", get(me).with_state(state.clone()))
-//         .layer(axum::middleware::from_fn_with_state(
-//             state.clone(),
-//             auth::middleware::auth_middleware,
-//         ))
-// }
+
+pub fn protected_routes<S>(state: Arc<AppState<S>>) -> Router
+where
+    S: UserManagement + Clone + Send + Sync + 'static,
+{
+    Router::new()
+        .route("/me", get(me_ha).with_state(state.clone()))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth::middleware::auth_middleware,
+        ))
+}
