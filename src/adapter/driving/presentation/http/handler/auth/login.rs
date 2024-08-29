@@ -5,9 +5,7 @@ use axum::Json;
 use http::StatusCode;
 use serde::Serialize;
 use serde_derive::Deserialize;
-use tower_cookies::Cookies;
 
-use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -47,22 +45,19 @@ where
     }
 }
 
-impl<S> AuthHandler<S>
+pub async fn login<S>(
+    State(user_service): State<Arc<S>>,
+    login_user: Json<UserLoginRequest>,
+) -> ApiResponse<UserLoginResponse, ResponseError>
 where
     S: UserManagement,
 {
-    pub async fn login(
-        login_user: Json<UserLoginRequest>,
-        State(user_service): State<Arc<S>>,
-        cookies: Cookies,
-    ) -> ApiResponse<UserLoginResponse, ResponseError> {
-        let result = user_service.login(&login_user).await;
-        match result {
-            Ok(response_data) => Ok(ApiResponseData::success_with_data(
-                response_data,
-                StatusCode::OK,
-            )),
-            Err(error) => Err(ApiResponseData::from(error)),
-        }
+    let result = user_service.login(&login_user).await;
+    match result {
+        Ok(response_data) => Ok(ApiResponseData::success_with_data(
+            response_data,
+            StatusCode::OK,
+        )),
+        Err(error) => Err(ApiResponseData::from(error)),
     }
 }

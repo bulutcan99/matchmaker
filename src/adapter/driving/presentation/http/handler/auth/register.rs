@@ -4,10 +4,8 @@ use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
-use tower_cookies::Cookies;
 use validator::{Validate, ValidationErrors};
 
-use crate::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -68,26 +66,23 @@ impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
     }
 }
 
-impl<S> AuthHandler<S>
+pub async fn register<S>(
+    State(user_service): State<Arc<S>>,
+    register_user: Json<UserRegisterRequest>,
+) -> ApiResponse<UserRegisterResponse, ResponseError>
 where
     S: UserManagement,
 {
-    pub async fn register(
-        register_user: Json<UserRegisterRequest>,
-        State(user_service): State<Arc<S>>,
-        cookies: Cookies,
-    ) -> ApiResponse<UserRegisterResponse, ResponseError> {
-        register_user
-            .validate()
-            .map_err(RegisterError::BadClientData)?;
+    register_user
+        .validate()
+        .map_err(RegisterError::BadClientData)?;
 
-        let result = user_service.register(&register_user).await;
-        match result {
-            Ok(registered_user) => Ok(ApiResponseData::success_with_data(
-                registered_user,
-                StatusCode::OK,
-            )),
-            Err(error) => Err(ApiResponseData::from(error)),
-        }
+    let result = user_service.register(&register_user).await;
+    match result {
+        Ok(registered_user) => Ok(ApiResponseData::success_with_data(
+            registered_user,
+            StatusCode::OK,
+        )),
+        Err(error) => Err(ApiResponseData::from(error)),
     }
 }

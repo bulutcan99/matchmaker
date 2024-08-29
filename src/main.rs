@@ -5,8 +5,7 @@ use anyhow::Error;
 use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
-use matchmaker::adapter::driving::presentation::http::handler::auth::auth_handler::AuthHandler;
-use matchmaker::adapter::driving::presentation::http::router::router;
+use matchmaker::adapter::driving::presentation::http::router::make_router;
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::config::Settings;
 use matchmaker::core::application::usecase::auth::service::UserService;
@@ -15,18 +14,14 @@ use matchmaker::core::application::usecase::auth::service::UserService;
 async fn main() -> Result<(), Error> {
     Settings::init()?;
     let db = DB::new().await?;
-    let user_repository = UserRepository::new(Arc::clone(&db.pool));
+    let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
-    let token_handler = JwtTokenHandler::new();
-    let user_service = UserService::new(
-        token_handler.clone(),
-        user_repository.clone(),
-        user_repository.clone(),
-    );
-
-    let user_handler = AuthHandler::new(user_service.clone());
-    let auth_handler_arc = Arc::new(user_handler);
-    let route = router();
+    let token_handler = Arc::new(JwtTokenHandler::new());
+    let user_service = Arc::new(UserService::new(
+        Arc::clone(&token_handler),
+        Arc::clone(&user_repository),
+    ));
+    let route = make_router(user_service);
     Server::bind()
         .serve(route.into_make_service())
         .await
