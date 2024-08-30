@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::config::Settings;
 use crate::core::application::usecase::auth::error::TokenError;
-use crate::core::domain::valueobject::date::Timestamp;
+use crate::core::domain::valueobject::date::{parse_utc, Timestamp};
 use crate::core::port::auth::TokenMaker;
 use crate::util::base64::{b64u_decode_to_string, b64u_encode};
 
@@ -63,18 +63,16 @@ impl Display for Token {
 // endregion: --- Token Type
 // region:    --- Web Token Gen and Validation
 impl TokenMaker for Token {
-    fn generate_token(user: &str, salt: Uuid) -> Result<Token, TokenError> {
+    fn generate_token(user: &str, salt: &Uuid) -> Result<Token, TokenError> {
         let config = Settings::get();
         let key = config.password.secret_jwt.as_deref().unwrap_or_default();
         _generate_token(user, salt, key)
     }
 
-    fn decode_token(origin_token: &Token, salt: Uuid) -> Result<String, TokenError> {
-        //return uuid
+    fn validate_token(token: &Token, salt: &Uuid) -> Result<(), TokenError> {
         let config = Settings::get();
         let key = config.password.secret_jwt.as_deref().unwrap_or_default();
-        _validate_token_sign_and_exp(origin_token, salt, key)?;
-
+        _validate_token_sign_and_exp(token, salt, key)?;
         Ok(())
     }
 }
@@ -96,7 +94,7 @@ fn _get_iat() -> String {
     current_time.to_rfc3339()
 }
 
-fn _generate_token(ident: &str, salt: Uuid, key: &str) -> Result<Token, TokenError> {
+fn _generate_token(ident: &str, salt: &Uuid, key: &str) -> Result<Token, TokenError> {
     let ident = ident.to_string();
     let exp = _get_expire_time();
     let iat = _get_iat();
@@ -113,11 +111,17 @@ fn _generate_token(ident: &str, salt: Uuid, key: &str) -> Result<Token, TokenErr
 
 fn _validate_token_sign_and_exp(
     origin_token: &Token,
-    salt: Uuid,
+    salt: &Uuid,
     key: &str,
-) -> Result<String, TokenError> {
+) -> Result<(), TokenError> {
     // -- Validate signature.
-    let new_sign_b64u = _token_sign_into_b64u(&origin_token.ident, &origin_token.exp, salt, key)?;
+    let new_sign_b64u = _token_sign_into_b64u(
+        &origin_token.ident,
+        &origin_token.iat,
+        &origin_token.exp,
+        salt,
+        key,
+    )?;
 
     if new_sign_b64u != origin_token.sign_b64u {
         return Err(TokenError::SignatureNotMatching);
@@ -125,7 +129,7 @@ fn _validate_token_sign_and_exp(
 
     // -- Validate expiration.
     let origin_exp = parse_utc(&origin_token.exp).map_err(|_| TokenError::ExpNotIso)?;
-    let now = Timestamp::now();
+    let now = Timestamp::now_utc().convert_to_offset();
 
     if origin_exp < now {
         return Err(TokenError::Expired);
@@ -140,11 +144,17 @@ fn _token_sign_into_b64u(
     ident: &str,
     iat: &str,
     exp: &str,
-    salt: Uuid,
+    salt: &Uuid,
     key: &str,
 ) -> Result<String, TokenError> {
-    let content = format!("{}.{}", b64u_encode(ident), b64u_encode(exp));
+    let content = format!(
+        "{}.{}.{}",
+        b64u_encode(ident),
+        b64u_encode(iat),
+        b64u_encode(exp)
+    );
 
+    let key = key.as_bytes();
     // -- Create a HMAC-SHA-512 from key.
     let mut hmac_sha512 =
         Hmac::<Sha512>::new_from_slice(key).map_err(|_| TokenError::HmacFailNewFromSlice)?;

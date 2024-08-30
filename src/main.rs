@@ -16,11 +16,7 @@ async fn main() -> Result<(), Error> {
     let db = DB::new().await?;
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
-    let token_handler = Arc::new(JwtTokenHandler::new());
-    let user_service = Arc::new(UserService::new(
-        Arc::clone(&token_handler),
-        Arc::clone(&user_repository),
-    ));
+    let user_service = Arc::new(UserService::new(Arc::clone(&user_repository)));
     let route = make_router(user_service);
     Server::bind()
         .serve(route.into_make_service())

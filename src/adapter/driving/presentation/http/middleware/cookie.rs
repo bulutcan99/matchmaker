@@ -1,13 +1,14 @@
-use anyhow::Error;
 use tower_cookies::{Cookie, Cookies};
 use uuid::Uuid;
 
-pub type Result<T> = core::result::Result<T, Error>;
+use crate::core::application::usecase::auth::error::TokenError;
+use crate::core::application::usecase::auth::token::Token;
+use crate::core::port::auth::TokenMaker;
 
-pub(crate) const AUTH_TOKEN: &str = "auth-token";
+pub const AUTH_TOKEN: &str = "auth-token";
 
-pub(crate) fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Result<()> {
-    let token = generate_web_token(user, salt)?;
+pub fn set_token_cookie(cookies: &Cookies, user: &str, salt: &Uuid) -> Result<(), TokenError> {
+    let token = Token::generate_token(user, salt)?;
 
     let mut cookie = Cookie::new(AUTH_TOKEN, token.to_string());
     cookie.set_http_only(true);
@@ -18,7 +19,7 @@ pub(crate) fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Res
     Ok(())
 }
 
-pub(crate) fn remove_token_cookie(cookies: &Cookies) -> Result<()> {
+pub fn remove_token_cookie(cookies: &Cookies) -> Result<(), TokenError> {
     let mut cookie = Cookie::from(AUTH_TOKEN);
     cookie.set_path("/");
 

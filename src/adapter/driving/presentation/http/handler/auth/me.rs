@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use axum::Extension;
 use axum::extract::State;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
-use tower_cookies::Cookies;
 
+use crate::adapter::driving::presentation::http::middleware::auth::CtxExtError;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -32,16 +33,38 @@ impl From<MeError> for ApiResponseData<ResponseError> {
     }
 }
 
+impl From<CtxExtError> for ApiResponseData<ResponseError> {
+    fn from(value: CtxExtError) -> Self {
+        match value {
+            CtxExtError::TokenNotInCookie
+            | CtxExtError::TokenWrongFormat
+            | CtxExtError::FailValidate
+            | CtxExtError::CannotSetTokenCookie => {
+                ApiResponseData::status_code(StatusCode::UNAUTHORIZED)
+            }
+            CtxExtError::UserNotFound => ApiResponseData::status_code(StatusCode::NOT_FOUND),
+            CtxExtError::ModelAccessError(_) => {
+                ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+            CtxExtError::CtxNotInRequestExt | CtxExtError::CtxCreateFail(_) => {
+                ApiResponseData::status_code(StatusCode::BAD_REQUEST)
+            }
+        }
+    }
+}
+
 pub async fn me_handler<S>(
     State(user_service): State<Arc<S>>,
-    cookies: Cookies,
+    Extension(user): Extension<Result<User, CtxExtError>>,
 ) -> ApiResponse<UserMeResponse, ResponseError>
 where
     S: UserManagement,
 {
-    let result = user_service.me(auth_header).await;
-    match result {
-        Ok(user) => Ok(ApiResponseData::success_with_data(user, StatusCode::OK)),
+    match user {
+        Ok(user) => Ok(ApiResponseData::success_with_data(
+            user.into(),
+            StatusCode::OK,
+        )),
         Err(error) => Err(ApiResponseData::from(error)),
     }
 }

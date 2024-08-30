@@ -4,6 +4,7 @@ use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
+use uuid::Uuid;
 use validator::{Validate, ValidationErrors};
 
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
@@ -45,7 +46,7 @@ pub struct UserRegisterRequest {
 
 #[derive(Serialize, Debug)]
 pub struct UserRegisterResponse {
-    pub uuid: String,
+    pub user_id: Uuid,
 }
 
 impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
@@ -79,10 +80,12 @@ where
 
     let result = user_service.register(&register_user).await;
     match result {
-        Ok(registered_user) => Ok(ApiResponseData::success_with_data(
-            registered_user,
-            StatusCode::OK,
-        )),
+        Ok(registered_user) => {
+            let res = UserRegisterResponse {
+                user_id: registered_user,
+            };
+            Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
+        }
         Err(error) => Err(ApiResponseData::from(error)),
     }
 }

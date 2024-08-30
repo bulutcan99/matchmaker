@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use axum::Router;
-use axum::routing::post;
+use axum::routing::{get, post};
 
-use crate::adapter::driving::presentation::http::handler::auth::login::{login, login_handler};
-use crate::adapter::driving::presentation::http::handler::auth::register::{
-  register, register_handler,
-};
+use crate::adapter::driving::presentation::http::handler::auth::login::login_handler;
+use crate::adapter::driving::presentation::http::handler::auth::me::me_handler;
+use crate::adapter::driving::presentation::http::handler::auth::register::register_handler;
+use crate::adapter::driving::presentation::http::middleware::auth;
 use crate::core::port::user::UserManagement;
 
 pub struct AppState<S>
@@ -22,8 +22,9 @@ where
 {
     let state = Arc::new(AppState { user_service });
 
-    Router::new().merge(public_routes(state.clone()))
-    // .nest("/api", protected_routes(state))
+    Router::new()
+        .merge(public_routes(state.clone()))
+        .nest("/api", protected_routes(state))
 }
 
 pub fn public_routes<S>(state: Arc<AppState<S>>) -> Router
@@ -46,9 +47,10 @@ where
     S: UserManagement + Clone + Send + Sync + 'static,
 {
     Router::new()
-        .route("/me", get(me_ha).with_state(state.clone()))
+        .route("/me", get(me_handler))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
-            auth::middleware::auth_middleware,
+            auth::is_authenticated,
         ))
+        .with_state(state)
 }

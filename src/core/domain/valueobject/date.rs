@@ -1,8 +1,10 @@
 use std::ops::Add;
 
+use anyhow::Error;
 use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
+use tower_cookies::cookie::time::format_description::well_known::Rfc3339;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Timestamp {
@@ -61,4 +63,9 @@ impl Timestamp {
     pub fn to_unix_timestamp(&self) -> u64 {
         self.datetime.timestamp() as u64
     }
+}
+
+pub fn parse_utc(moment: &str) -> Result<OffsetDateTime, Error> {
+    OffsetDateTime::parse(moment, &Rfc3339)
+        .map_err(|_| Error::from("Error while parsing date-time!"))
 }
