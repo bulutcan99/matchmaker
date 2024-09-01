@@ -63,6 +63,7 @@ where
 
         Ok(registered_id)
     }
+
     async fn login(&self, input: &UserLoginRequest) -> Result<Uuid, LoginError> {
         let found_user = self
             .user_repository

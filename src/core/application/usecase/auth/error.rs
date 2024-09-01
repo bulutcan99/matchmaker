@@ -1,6 +1,8 @@
+use std::fmt;
+
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TokenError {
     HmacFailNewFromSlice,
     InvalidFormat,
@@ -11,16 +13,6 @@ pub enum TokenError {
     ExpNotIso,
     Expired,
 }
-
-// region:    --- Error Boilerplate
-impl core::fmt::Display for TokenError {
-    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error> {
-        write!(fmt, "{self:?}")
-    }
-}
-
-impl std::error::Error for TokenError {}
-// endregion: --- Error Boilerplate
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum RegisterError<T> {
@@ -45,4 +37,15 @@ pub enum MeError {
     InvalidIdFormat,
     DbInternalError,
     UserNotFound,
+}
+
+impl fmt::Display for MeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MeError::InvalidJwtToken => write!(f, "Invalid JWT token"),
+            MeError::InvalidIdFormat => write!(f, "Invalid ID format"),
+            MeError::DbInternalError => write!(f, "Database internal error"),
+            MeError::UserNotFound => write!(f, "User not found"),
+        }
+    }
 }

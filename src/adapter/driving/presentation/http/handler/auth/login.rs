@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::adapter::driving::presentation::http::middleware::cookie::set_token_cookie;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
-	ApiResponse, ApiResponseData,
+    ApiResponse, ApiResponseData,
 };
 use crate::core::application::usecase::auth::error::{LoginError, TokenError};
 use crate::core::port::user::UserManagement;
@@ -49,17 +49,24 @@ where
     }
 }
 
-impl From<TokenError> for ResponseError {
+impl<E> From<TokenError> for ApiResponseData<E>
+where
+    E: Serialize + 'static,
+{
     fn from(value: TokenError) -> Self {
         match value {
-            TokenError::HmacFailNewFromSlice => ResponseError::InternalError,
-            TokenError::InvalidFormat => ResponseError::BadRequest,
-            TokenError::CannotDecodeIdent => ResponseError::BadRequest,
-            TokenError::CannotDecodeIat => ResponseError::BadRequest,
-            TokenError::CannotDecodeExp => ResponseError::BadRequest,
-            TokenError::SignatureNotMatching => ResponseError::Unauthorized,
-            TokenError::ExpNotIso => ResponseError::BadRequest,
-            TokenError::Expired => ResponseError::Unauthorized,
+            TokenError::HmacFailNewFromSlice => {
+                ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+            TokenError::InvalidFormat => ApiResponseData::status_code(StatusCode::BAD_REQUEST),
+            TokenError::CannotDecodeIdent => ApiResponseData::status_code(StatusCode::BAD_REQUEST),
+            TokenError::CannotDecodeIat => ApiResponseData::status_code(StatusCode::BAD_REQUEST),
+            TokenError::CannotDecodeExp => ApiResponseData::status_code(StatusCode::BAD_REQUEST),
+            TokenError::SignatureNotMatching => {
+                ApiResponseData::status_code(StatusCode::UNAUTHORIZED)
+            }
+            TokenError::ExpNotIso => ApiResponseData::status_code(StatusCode::BAD_REQUEST),
+            TokenError::Expired => ApiResponseData::status_code(StatusCode::UNAUTHORIZED),
         }
     }
 }
@@ -73,31 +80,15 @@ where
     S: UserManagement,
 {
     let result = user_service.login(&login_user).await;
+
     match result {
-        Ok(response_data) => {
-            let user_id = response_data;
-            match set_token_cookie(&cookies, &login_user.email, &user_id) {
-                Ok(()) => {
-                    let res = UserLoginResponse {
-                        user_id: response_data,
-                    };
-                    Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
-                }
-                Err(error) => {
-                    let api_error = ResponseError::from(error);
-                    Err(ApiResponseData::Error {
-                        error: api_error,
-                        status: StatusCode::NOT_FOUND,
-                    })
-                }
+        Ok(user_id) => match set_token_cookie(&cookies, &login_user.email, &user_id) {
+            Ok(()) => {
+                let res = UserLoginResponse { user_id };
+                Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
             }
-        }
-        Err(error) => {
-            let api_error = ResponseError::from(error);
-            Err(ApiResponseData::error_with_status(
-                api_error,
-                StatusCode::UNAUTHORIZED,
-            ))
-        }
+            Err(error) => Err(ApiResponseData::from(error)),
+        },
+        Err(error) => Err(ApiResponseData::from(error)),
     }
 }

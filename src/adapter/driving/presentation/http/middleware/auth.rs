@@ -17,7 +17,7 @@ use crate::core::port::user::UserManagement;
 pub const AUTH_TOKEN: &str = "auth-token";
 
 #[derive(Clone, Serialize, Debug)]
-pub enum CtxExtError {
+pub enum ExtError {
     TokenNotInCookie,
     TokenWrongFormat,
     UserNotFound,
@@ -35,12 +35,12 @@ pub async fn is_authenticated<S>(
     next: Next,
 ) -> Result<Response<Body>, (StatusCode, String)>
 where
-    S: UserManagement,
+    S: UserManagement + Clone + Send + Sync + 'static,
 {
     let ctx_ext_result = resolver(State(user_service.clone()), cookies.clone()).await;
 
     if let Err(ref err) = ctx_ext_result {
-        if !matches!(err, CtxExtError::TokenNotInCookie) {
+        if !matches!(err, ExtError::TokenNotInCookie) {
             cookies.remove(Cookie::from(AUTH_TOKEN));
         }
     }
@@ -50,32 +50,26 @@ where
     Ok(next.run(req).await)
 }
 
-pub async fn resolver<S>(
-    State(user_service): State<S>,
-    cookies: Cookies,
-) -> Result<User, CtxExtError>
+pub async fn resolver<S>(State(user_service): State<S>, cookies: Cookies) -> Result<User, ExtError>
 where
     S: UserManagement,
 {
     let token_str = cookies
         .get(AUTH_TOKEN)
         .map(|c| c.value().to_string())
-        .ok_or(CtxExtError::TokenNotInCookie)?;
+        .ok_or(ExtError::TokenNotInCookie)?;
 
-    let token: Token = token_str
-        .parse()
-        .map_err(|_| CtxExtError::TokenWrongFormat)?;
+    let token: Token = token_str.parse().map_err(|_| ExtError::TokenWrongFormat)?;
 
     let user = user_service
         .me(&token.ident)
         .await
-        .map_err(|ex| CtxExtError::ModelAccessError(ex.to_string()))?
-        .ok_or(CtxExtError::UserNotFound)?;
+        .map_err(|ex| ExtError::ModelAccessError(ex.to_string()))?;
 
-    Token::validate_token(&token, &user.id.unwrap()).map_err(|_| CtxExtError::FailValidate)?;
+    Token::validate_token(&token, &user.id.unwrap()).map_err(|_| ExtError::FailValidate)?;
 
-    set_token_cookie(&cookies, &user.email, user.id.unwrap())
-        .map_err(|_| CtxExtError::CannotSetTokenCookie)?;
+    set_token_cookie(&cookies, &user.email, &user.id.unwrap())
+        .map_err(|_| ExtError::CannotSetTokenCookie)?;
 
     Ok(user)
 }

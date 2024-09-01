@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
-use axum::Extension;
 use axum::extract::State;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
+use tower_cookies::Cookies;
 
-use crate::adapter::driving::presentation::http::middleware::auth::CtxExtError;
+use crate::adapter::driving::presentation::http::middleware::auth::ExtError;
+use crate::adapter::driving::presentation::http::middleware::cookie::get_token_from_cookie;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -17,6 +18,12 @@ use crate::core::port::user::UserManagement;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserMeResponse {
     pub user: User,
+}
+
+impl From<User> for UserMeResponse {
+    fn from(value: User) -> Self {
+        UserMeResponse { user: value }
+    }
 }
 
 impl From<MeError> for ApiResponseData<ResponseError> {
@@ -33,20 +40,20 @@ impl From<MeError> for ApiResponseData<ResponseError> {
     }
 }
 
-impl From<CtxExtError> for ApiResponseData<ResponseError> {
-    fn from(value: CtxExtError) -> Self {
+impl From<ExtError> for ApiResponseData<ResponseError> {
+    fn from(value: ExtError) -> Self {
         match value {
-            CtxExtError::TokenNotInCookie
-            | CtxExtError::TokenWrongFormat
-            | CtxExtError::FailValidate
-            | CtxExtError::CannotSetTokenCookie => {
+            ExtError::TokenNotInCookie
+            | ExtError::TokenWrongFormat
+            | ExtError::FailValidate
+            | ExtError::CannotSetTokenCookie => {
                 ApiResponseData::status_code(StatusCode::UNAUTHORIZED)
             }
-            CtxExtError::UserNotFound => ApiResponseData::status_code(StatusCode::NOT_FOUND),
-            CtxExtError::ModelAccessError(_) => {
+            ExtError::UserNotFound => ApiResponseData::status_code(StatusCode::NOT_FOUND),
+            ExtError::ModelAccessError(_) => {
                 ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
             }
-            CtxExtError::CtxNotInRequestExt | CtxExtError::CtxCreateFail(_) => {
+            ExtError::CtxNotInRequestExt | ExtError::CtxCreateFail(_) => {
                 ApiResponseData::status_code(StatusCode::BAD_REQUEST)
             }
         }
@@ -55,12 +62,17 @@ impl From<CtxExtError> for ApiResponseData<ResponseError> {
 
 pub async fn me_handler<S>(
     State(user_service): State<Arc<S>>,
-    Extension(user): Extension<Result<User, CtxExtError>>,
+    cookies: Cookies,
 ) -> ApiResponse<UserMeResponse, ResponseError>
 where
     S: UserManagement,
 {
-    match user {
+    let token = match get_token_from_cookie(&cookies) {
+        Ok(token) => token,
+        Err(error) => return Err(ApiResponseData::from(error)),
+    };
+
+    match user_service.me(&token.ident).await {
         Ok(user) => Ok(ApiResponseData::success_with_data(
             user.into(),
             StatusCode::OK,
