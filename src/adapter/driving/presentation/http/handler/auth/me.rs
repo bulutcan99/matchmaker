@@ -3,7 +3,6 @@ use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::adapter::driving::presentation::http::middleware::auth::ExtError;
-use crate::adapter::driving::presentation::http::middleware::cookie::get_token_from_cookie;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
@@ -63,8 +62,10 @@ pub async fn me_handler<S>(
 where
     S: UserManagement,
 {
+    let user_response: UserMeResponse = user.into();
+
     Ok(ApiResponseData::success_with_data(
-        user.into(),
+        user_response,
         StatusCode::OK,
     ))
 }
