@@ -11,6 +11,7 @@ use crate::adapter::driving::presentation::http::response::field_error::Response
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
+use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::RegisterError;
 use crate::core::port::user::UserManagement;
 
@@ -68,7 +69,7 @@ impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
 }
 
 pub async fn register_handler<S>(
-    State(user_service): State<Arc<S>>,
+    State(app): State<Arc<AppState<S>>>,
     register_user: Json<UserRegisterRequest>,
 ) -> ApiResponse<UserRegisterResponse, ResponseError>
 where
@@ -78,7 +79,7 @@ where
         .validate()
         .map_err(RegisterError::BadClientData)?;
 
-    let result = user_service.register(&register_user).await;
+    let result = app.user_service.register(&register_user).await;
     match result {
         Ok(registered_user) => {
             let res = UserRegisterResponse {

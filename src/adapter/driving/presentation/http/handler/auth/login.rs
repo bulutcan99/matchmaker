@@ -13,6 +13,7 @@ use crate::adapter::driving::presentation::http::response::field_error::Response
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
+use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::{LoginError, TokenError};
 use crate::core::port::user::UserManagement;
 
@@ -72,14 +73,14 @@ where
 }
 
 pub async fn login_handler<S>(
-    State(user_service): State<Arc<S>>,
+    State(app): State<Arc<AppState<S>>>,
     cookies: Cookies,
     login_user: Json<UserLoginRequest>,
 ) -> ApiResponse<UserLoginResponse, ResponseError>
 where
     S: UserManagement,
 {
-    let result = user_service.login(&login_user).await;
+    let result = app.user_service.login(&login_user).await;
 
     match result {
         Ok(user_id) => match set_token_cookie(&cookies, &login_user.email, &user_id) {

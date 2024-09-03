@@ -1,9 +1,6 @@
-use std::sync::Arc;
-
-use axum::extract::State;
+use axum::Extension;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
-use tower_cookies::Cookies;
 
 use crate::adapter::driving::presentation::http::middleware::auth::ExtError;
 use crate::adapter::driving::presentation::http::middleware::cookie::get_token_from_cookie;
@@ -61,22 +58,13 @@ impl From<ExtError> for ApiResponseData<ResponseError> {
 }
 
 pub async fn me_handler<S>(
-    State(user_service): State<Arc<S>>,
-    cookies: Cookies,
+    Extension(user): Extension<User>,
 ) -> ApiResponse<UserMeResponse, ResponseError>
 where
     S: UserManagement,
 {
-    let token = match get_token_from_cookie(&cookies) {
-        Ok(token) => token,
-        Err(error) => return Err(ApiResponseData::from(error)),
-    };
-
-    match user_service.me(&token.ident).await {
-        Ok(user) => Ok(ApiResponseData::success_with_data(
-            user.into(),
-            StatusCode::OK,
-        )),
-        Err(error) => Err(ApiResponseData::from(error)),
-    }
+    Ok(ApiResponseData::success_with_data(
+        user.into(),
+        StatusCode::OK,
+    ))
 }
