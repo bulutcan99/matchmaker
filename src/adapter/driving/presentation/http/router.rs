@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
-use axum::{middleware, Router};
+use axum::Router;
 use axum::routing::{get, post};
 
 use crate::adapter::driving::presentation::http::handler::_default::health_check_handler::health_checker_handler;
 use crate::adapter::driving::presentation::http::handler::auth::login::login_handler;
-use crate::adapter::driving::presentation::http::handler::auth::me::me_handler;
 use crate::adapter::driving::presentation::http::handler::auth::register::register_handler;
-use crate::adapter::driving::presentation::http::middleware::auth::is_authenticated;
 use crate::core::port::user::UserManagement;
 
 pub struct AppState<S>
@@ -28,24 +26,19 @@ where
 
 pub fn make_router<S>(app_state: Arc<AppState<S>>) -> Router
 where
-    S: UserManagement + 'static,
+    S: UserManagement + Clone + 'static,
 {
     Router::new()
         .route("/api/healthchecker", get(health_checker_handler))
         .route("/api/auth/register", post(register_handler))
         .route("/api/auth/login", post(login_handler))
         // .route(
-        //     "/api/auth/logout",
-        //     get(logout_handler)
-        //         .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        //     "/api/users/me",
+        //     get(me_handler).route_layer(middleware::from_fn_with_state(
+        //         app_state.clone(),
+        //         is_authenticated,
+        //     )),
         // )
-        .route(
-            "/api/users/me",
-            get(me_handler).route_layer(middleware::from_fn_with_state(
-                app_state.clone(),
-                is_authenticated,
-            )),
-        )
         .with_state(app_state)
 }
 

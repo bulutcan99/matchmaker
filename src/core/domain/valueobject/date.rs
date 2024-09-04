@@ -1,6 +1,6 @@
 use std::ops::Add;
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
@@ -66,6 +66,5 @@ impl Timestamp {
 }
 
 pub fn parse_utc(moment: &str) -> Result<OffsetDateTime, Error> {
-    OffsetDateTime::parse(moment, &Rfc3339)
-        .map_err(|_| Error::from("Error while parsing date-time!"))
+    OffsetDateTime::parse(moment, &Rfc3339).map_err(|_| anyhow!("Error while parsing date-time!"))
 }

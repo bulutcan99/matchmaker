@@ -2,10 +2,9 @@ use std::sync::Arc;
 
 use anyhow::Error;
 
-use matchmaker::adapter::driven::auth::jwt::JwtTokenHandler;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
-use matchmaker::adapter::driving::presentation::http::router::make_router;
+use matchmaker::adapter::driving::presentation::http::router::{AppState, make_router};
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::config::Settings;
 use matchmaker::core::application::usecase::auth::service::UserService;
@@ -17,7 +16,8 @@ async fn main() -> Result<(), Error> {
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
     let user_service = Arc::new(UserService::new(Arc::clone(&user_repository)));
-    let route = make_router(user_service);
+    let app_state = Arc::new(AppState::new(user_service));
+    let route = make_router(app_state);
     Server::bind()
         .serve(route.into_make_service())
         .await
