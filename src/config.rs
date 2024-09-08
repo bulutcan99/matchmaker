@@ -1,15 +1,28 @@
 use std::collections::BTreeMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use anyhow::{anyhow, Error};
-use config::{Config, ConfigError, Environment, File};
+use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_derive::Serialize;
+use serde_json::json;
+use tera::{Context, Tera};
+use tracing::info;
 
 use crate::shared::logger::logger;
 
+lazy_static! {
+    static ref DEFAULT_FOLDER: PathBuf = PathBuf::from("config");
+}
+
+/// Main application configuration structure.
+///
+/// This struct encapsulates various configuration settings. The configuration
+/// can be customized through YAML files for different environments.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Settings {
+pub struct Config {
     pub logger: Logger,
     pub server: Server,
     #[cfg(feature = "with-db")]
@@ -216,7 +229,6 @@ pub struct Redis {
 pub struct Auth {
     /// JWT authentication config
     pub jwt: Option<JWT>,
-    pub hash: Option<Hash>,
 }
 
 /// JWT configuration structure.
@@ -229,12 +241,6 @@ pub struct JWT {
     pub secret: String,
     /// The expiration time for authentication tokens
     pub expiration: u64,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Hash {
-    /// The secret key For JWT token
-    pub secret: String,
 }
 
 /// Defines the authentication mechanism for middleware.
@@ -280,7 +286,6 @@ pub enum JWTLocation {
 pub struct Server {
     /// The address on which the server should listen on for incoming
     /// connections.
-    pub app_name: String,
     #[serde(default = "default_binding")]
     pub binding: String,
     /// The port on which the server should listen for incoming connections.
@@ -362,20 +367,6 @@ pub struct Middlewares {
     pub remote_ip: Option<RemoteIPConfig>,
     /// Configure fallback behavior when hitting a missing URL
     pub fallback: Option<FallbackConfig>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SecureHeadersConfig {
-    pub preset: Option<String>,
-    pub overrides: Option<BTreeMap<String, String>>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct RemoteIPConfig {
-    pub enable: bool,
-    /// A list of alternative proxy list IP ranges and/or network range (will
-    /// replace built-in proxy list)
-    pub trusted_proxies: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -512,38 +503,51 @@ pub struct MailerAuth {
     pub password: String,
 }
 
-static SETTINGS: OnceLock<Settings> = OnceLock::new();
-
-impl Settings {
-    pub fn new() -> Result<Self, ConfigError> {
-        let mut config = Config::builder()
-            .add_source(File::with_name("config/local"))
-            .build()?;
-
-        let debug_mode: bool = config.get("debug").unwrap_or(false);
-        let run_mode = if debug_mode {
-            "config/development"
-        } else {
-            "config/production"
-        };
-
-        let s = Config::builder()
-            .add_source(File::with_name(run_mode))
-            .add_source(Environment::with_prefix("app"))
-            .build()?;
-
-        s.try_deserialize()
+impl Config {
+    pub fn new(env: &Environment) -> Result<Self> {
+        let config = Self::from_folder(env, DEFAULT_FOLDER.as_path())?;
+        Ok(config)
     }
 
-    pub fn init() -> Result<(), Error> {
-        let settings = Settings::new()?;
-        SETTINGS
-            .set(settings)
-            .map_err(|_| anyhow!("Settings already initialized"))?;
-        Ok(())
+    pub fn from_folder(env: &Environment, path: &Path) -> Result<Self> {
+        // by order of precedence
+        let files = [
+            path.join(format!("{env}.local.yaml")),
+            path.join(format!("{env}.yaml")),
+        ];
+
+        let selected_path = files
+            .iter()
+            .find(|p| p.exists())
+            .ok_or_else(|| Error::Message("no configuration file found".to_string()))?;
+
+        info!(selected_path =? selected_path, "loading environment from");
+
+        let content = fs::read_to_string(selected_path)?;
+        let rendered = render_string(&content, &json!({}))?;
+
+        serde_yaml::from_str(&rendered)
+            .map_err(|err| Error::YAMLFile(err, selected_path.to_string_lossy().to_string()))
     }
 
-    pub fn get() -> &'static Settings {
-        SETTINGS.get().expect("Settings not initialized")
+    /// Get a reference to the JWT configuration.
+    ///
+    /// # Errors
+    /// return an error when jwt token not configured
+    pub fn get_jwt_config(&self) -> Result<&JWT, Error> {
+        self.auth
+            .as_ref()
+            .and_then(|auth| auth.jwt.as_ref())
+            .map_or_else(
+                || Err(Error::Any("no JWT config found".to_string().into())),
+                Ok,
+            )
     }
 }
+
+pub fn render_string(tera_template: &str, locals: &serde_json::Value) -> Result<String> {
+    let text = Tera::one_off(tera_template, &Context::from_serialize(locals)?, false)?;
+    Ok(text)
+}
+
+pub type Result<T, E = Error> = std::result::Result<T, E>;

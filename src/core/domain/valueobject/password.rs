@@ -50,5 +50,5 @@ impl From<String> for HashedPassword {
 
 fn get_secret_key() -> &'static str {
     let settings = Settings::get();
-    &settings.auth.password.secret
+    &settings.auth.hash.secret
 }
