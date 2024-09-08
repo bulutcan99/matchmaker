@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::middleware::from_fn_with_state;
 use axum::Router;
 use axum::routing::{get, post};
+use tower_cookies::CookieManagerLayer;
 
 use crate::adapter::driving::presentation::http::handler::_default::health_check_handler::health_checker_handler;
 use crate::adapter::driving::presentation::http::handler::auth::login::login_handler;
@@ -36,15 +37,14 @@ where
         get(me_handler).layer(from_fn_with_state(app_state.clone(), is_authenticated)),
     );
 
-    // Public routes
     let public_routes = Router::new()
         .route("/api/healthchecker", get(health_checker_handler))
         .route("/api/auth/register", post(register_handler))
         .route("/api/auth/login", post(login_handler));
 
-    // Merge public and protected routes under a single router and apply the Extension layer at the top level
     Router::new()
         .merge(public_routes)
         .merge(protected_routes)
+        .layer(CookieManagerLayer::new())
         .with_state(app_state)
 }
