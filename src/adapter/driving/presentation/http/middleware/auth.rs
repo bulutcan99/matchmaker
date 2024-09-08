@@ -1,3 +1,4 @@
+use std::convert::Infallible;
 use std::fmt::Display;
 use std::sync::Arc;
 
@@ -5,12 +6,17 @@ use axum::body::Body;
 use axum::extract::{Request, State};
 use axum::Json;
 use axum::middleware::Next;
-use axum::response::IntoResponse;
+use axum::response::{IntoResponse, Response};
+use axum_extra::extract::cookie::Cookie;
 use http::{header, StatusCode};
+use log::debug;
 use serde_derive::Serialize;
 use tower_cookies::cookie::CookieJar;
+use tower_cookies::Cookies;
 
-use crate::adapter::driving::presentation::http::middleware::cookie::AUTH_TOKEN;
+use crate::adapter::driving::presentation::http::middleware::cookie::{
+    AUTH_TOKEN, set_token_cookie,
+};
 use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::token::Token;
 use crate::core::port::auth::TokenMaker;
@@ -18,7 +24,7 @@ use crate::core::port::user::UserManagement;
 
 #[derive(Clone, Serialize, Debug)]
 pub enum ExtError {
-    TokenNotInCookie,
+    TokenNotInCookieOrHeader,
     TokenWrongFormat,
     UserNotFound,
     ModelAccessError(String),
@@ -29,46 +35,46 @@ pub enum ExtError {
 }
 
 pub async fn is_authenticated<S>(
-    cookie_jar: CookieJar,
     State(app): State<Arc<AppState<S>>>,
+    cookies: Cookies,
     mut req: Request<Body>,
     next: Next,
-) -> Result<impl IntoResponse, (StatusCode, Json<ExtError>)>
+) -> Result<Response, Infallible>
 where
     S: UserManagement + 'static,
 {
-    let token_str = cookie_jar
+    debug!("{:<12} - mw_ctx_resolve", "MIDDLEWARE");
+
+    let ctx_ext_result = ctx_resolve(app, &cookies).await;
+
+    if ctx_ext_result.is_err() && !matches!(ctx_ext_result, Err(ExtError::TokenNotInCookieOrHeader))
+    {
+        cookies.remove(Cookie::from(AUTH_TOKEN));
+    }
+
+    req.extensions_mut().insert(ctx_ext_result);
+
+    Ok(next.run(req).await)
+}
+
+async fn ctx_resolve<S>(app_state: Arc<AppState<S>>, cookies: &Cookies) -> Result<(), ExtError>
+where
+    S: UserManagement + 'static,
+{
+    let token = cookies
         .get(AUTH_TOKEN)
-        .map(|cookie| cookie.value().to_string())
-        .or_else(|| {
-            req.headers()
-                .get(header::AUTHORIZATION)
-                .and_then(|auth_header| auth_header.to_str().ok())
-                .filter(|auth_value| auth_value.starts_with("Bearer "))
-                .map(|auth_value| auth_value.trim_start_matches("Bearer ").to_owned())
-        })
-        .ok_or((StatusCode::UNAUTHORIZED, Json(ExtError::TokenNotInCookie)))?;
+        .map(|c| c.value().to_string())
+        .ok_or(ExtError::TokenNotInCookieOrHeader)?;
+    let token: Token = token.parse().map_err(|_| ExtError::TokenWrongFormat)?;
 
-    let token: Token = token_str
-        .parse()
-        .map_err(|_| (StatusCode::BAD_REQUEST, Json(ExtError::TokenWrongFormat)))?;
+    let user = app_state
+        .user_service
+        .me(&token.ident)
+        .await
+        .map_err(|_| ExtError::UserNotFound)?;
+    Token::validate_token(&token, &user.id.unwrap()).map_err(|_| ExtError::FailValidate)?;
+    set_token_cookie(cookies, &user.email, &user.id.unwrap())
+        .map_err(|_| ExtError::CannotSetTokenCookie)?;
 
-    let user = app.user_service.me(&token.ident).await.map_err(|ex| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ExtError::ModelAccessError(ex.to_string())),
-        )
-    })?;
-
-    Token::validate_token(
-        &token,
-        &user
-            .id
-            .ok_or((StatusCode::NOT_FOUND, Json(ExtError::UserNotFound)))?,
-    )
-    .map_err(|_| (StatusCode::UNAUTHORIZED, Json(ExtError::FailValidate)))?;
-
-    req.extensions_mut().insert(user);
-    let response = next.run(req).await;
-    Ok(response)
+    Ok(())
 }

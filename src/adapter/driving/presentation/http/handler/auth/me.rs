@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use axum::Extension;
+use axum::extract::State;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
 
@@ -7,6 +10,7 @@ use crate::adapter::driving::presentation::http::response::field_error::Response
 use crate::adapter::driving::presentation::http::response::response::{
     ApiResponse, ApiResponseData,
 };
+use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::MeError;
 use crate::core::domain::entity::user::User;
 use crate::core::port::user::UserManagement;
@@ -39,7 +43,7 @@ impl From<MeError> for ApiResponseData<ResponseError> {
 impl From<ExtError> for ApiResponseData<ResponseError> {
     fn from(value: ExtError) -> Self {
         match value {
-            ExtError::TokenNotInCookie
+            ExtError::TokenNotInCookieOrHeader
             | ExtError::TokenWrongFormat
             | ExtError::FailValidate
             | ExtError::CannotSetTokenCookie => {
@@ -57,6 +61,7 @@ impl From<ExtError> for ApiResponseData<ResponseError> {
 }
 
 pub async fn me_handler<S>(
+    State(state): State<Arc<AppState<S>>>,
     Extension(user): Extension<User>,
 ) -> ApiResponse<UserMeResponse, ResponseError>
 where

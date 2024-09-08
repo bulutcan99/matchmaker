@@ -33,22 +33,17 @@ static SETTINGS: OnceLock<Settings> = OnceLock::new();
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
-        // Build the configuration from `local.toml` first
         let mut config = Config::builder()
-            .add_source(File::with_name("local"))
+            .add_source(File::with_name("config/local"))
             .build()?;
 
-        // Extract the `debug` value
-        let debug_mode: bool = config.get("debug").unwrap_or(false); // default to false if not found
-
-        // Determine which configuration file to use based on the `debug` value
+        let debug_mode: bool = config.get("debug").unwrap_or(false);
         let run_mode = if debug_mode {
-            "development"
+            "config/development"
         } else {
-            "production"
+            "config/production"
         };
 
-        // Build the configuration again with the determined file
         let s = Config::builder()
             .add_source(File::with_name(run_mode))
             .add_source(Environment::with_prefix("app"))

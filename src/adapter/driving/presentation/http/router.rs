@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
+use axum::middleware::from_fn_with_state;
 use axum::Router;
 use axum::routing::{get, post};
 
 use crate::adapter::driving::presentation::http::handler::_default::health_check_handler::health_checker_handler;
 use crate::adapter::driving::presentation::http::handler::auth::login::login_handler;
+use crate::adapter::driving::presentation::http::handler::auth::me::me_handler;
 use crate::adapter::driving::presentation::http::handler::auth::register::register_handler;
+use crate::adapter::driving::presentation::http::middleware::auth::is_authenticated;
 use crate::core::port::user::UserManagement;
 
 pub struct AppState<S>
@@ -26,51 +29,22 @@ where
 
 pub fn make_router<S>(app_state: Arc<AppState<S>>) -> Router
 where
-    S: UserManagement + Clone + 'static,
+    S: UserManagement + 'static,
 {
-    Router::new()
+    let protected_routes = Router::new().route(
+        "/api/users/me",
+        get(me_handler).layer(from_fn_with_state(app_state.clone(), is_authenticated)),
+    );
+
+    // Public routes
+    let public_routes = Router::new()
         .route("/api/healthchecker", get(health_checker_handler))
         .route("/api/auth/register", post(register_handler))
-        .route("/api/auth/login", post(login_handler))
-        // .route(
-        //     "/api/users/me",
-        //     get(me_handler).route_layer(middleware::from_fn_with_state(
-        //         app_state.clone(),
-        //         is_authenticated,
-        //     )),
-        // )
+        .route("/api/auth/login", post(login_handler));
+
+    // Merge public and protected routes under a single router and apply the Extension layer at the top level
+    Router::new()
+        .merge(public_routes)
+        .merge(protected_routes)
         .with_state(app_state)
 }
-
-//
-// pub fn public_routes<S>(state: Arc<AppState<S>>) -> Router
-// where
-//     S: UserManagement + 'static,
-// {
-//     Router::new()
-//         .route(
-//             "/register",
-//             post(register_handler).with_state(state.user_service.clone()),
-//         )
-//         .route(
-//             "/login",
-//             post(login_handler).with_state(state.user_service.clone()),
-//         )
-// }
-//
-// pub fn protected_routes<S>(state: Arc<AppState<S>>) -> Router
-// where
-//     S: UserManagement + Clone + Send + Sync + 'static,
-// {
-//     Router::new()
-//         .route(
-//             "/me",
-//             get(me_handler).with_state(state.user_service.clone()),
-//         )
-//         .layer(middleware::from_fn_with_state(
-//             state.clone(),
-//             |state: State<S>, cookies: Cookies, req: Request<Body>, next: Next| async move {
-//                 is_authenticated(state, cookies, req, next).await
-//             },
-//         ))
-// }
