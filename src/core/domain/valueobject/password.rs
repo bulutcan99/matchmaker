@@ -19,7 +19,7 @@ impl HashedPassword {
         let hashed_password = hasher
             .with_password(password)
             .with_salt(email)
-            .with_secret_key(get_secret_key().unwrap())
+            .with_secret_key(get_secret_key())
             .hash()
             .unwrap();
         Ok(HashedPassword(hashed_password))
@@ -30,7 +30,7 @@ impl HashedPassword {
         let result = verifier
             .with_hash(&self.0)
             .with_password(password)
-            .with_secret_key(get_secret_key().unwrap())
+            .with_secret_key(get_secret_key())
             .verify()
             .map_err(|_| PasswordError::InvalidPassword)?;
 
@@ -48,7 +48,7 @@ impl From<String> for HashedPassword {
     }
 }
 
-fn get_secret_key() -> Option<&'static str> {
+fn get_secret_key() -> &'static str {
     let settings = Settings::get();
-    settings.password.secret_key.as_deref()
+    &settings.auth.password.secret
 }

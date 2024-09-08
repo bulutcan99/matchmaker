@@ -1,11 +1,73 @@
-[password]
-secret_key = "3wT7Kf8JmLq1Zx9Pn2GtHv6YvBcDdRt5"
-secret_jwt = "3wT7Kf8JmLq1Zx9Pn2GtHv6YvBcDdRt6"
+[logger]
+enable = true
+pretty_backtrace = true
+level = "debug"
+format = "pretty"
+# override_filter = "trace" # Uncomment this line to enable all third-party libraries
 
-[database]
-url = "postgres://bulutgocer:pass@localhost:5432/matchmaker?sslmode=disable"
-max_conn = 1000
-
-[http]
+[server]
 host = "127.0.0.1"
 port = 8080
+
+[server.middlewares.etag]
+enable = true
+
+[server.middlewares.limit_payload]
+enable = true
+body_limit = "5mb"
+
+[server.middlewares.secure_headers]
+preset = "github"
+
+[server.middlewares.remote_ip]
+enable = false
+
+[server.middlewares.logger]
+enable = true
+
+[server.middlewares.catch_panic]
+enable = true
+
+[server.middlewares.timeout_request]
+enable = false
+timeout = 5000
+
+[server.middlewares.cors]
+enable = true
+# allow_origins = ["https://loco.rs"]
+# allow_headers = ["Content-Type"]
+# allow_methods = ["POST"]
+# max_age = 3600
+
+[workers]
+mode = "BackgroundAsync"
+
+[mailer.smtp]
+enable = true
+host = "localhost"
+port = 1025
+secure = false
+# auth.user = ""
+# auth.password = ""
+
+[database]
+uri = "postgres://bulutgocer:pass@localhost:5432/matchmaker?sslmode=disable"
+enable_logging = false
+connect_timeout = 500
+idle_timeout = 500
+min_connections = 1
+max_connections = 100
+auto_migrate = false
+dangerously_truncate = false
+dangerously_recreate = false
+
+[queue]
+uri = "redis://127.0.0.1"
+dangerously_flush = false
+
+[auth.jwt]
+secret = "muqbYMqkrtvwVE8II9q1"
+expiration = 604800
+
+[auth.password]
+secret = "3wT7Kf8JmLq1Zx9Pn2GtHv6YvBcDdRt6"

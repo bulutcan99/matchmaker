@@ -1,12 +1,13 @@
+use std::net::{IpAddr, SocketAddr};
+use std::str::FromStr;
 use std::{
     fmt,
     io::{self, ErrorKind},
     time::Duration,
 };
-use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
 
 use futures_util::future::poll_fn;
+use futures_util::TryFutureExt;
 use http::Request;
 use hyper::body::Incoming;
 use hyper_util::{
@@ -62,12 +63,8 @@ pub fn from_tcp(listener: std::net::TcpListener) -> Server {
 impl Server {
     pub fn bind() -> Self {
         let config = Settings::get();
-        let host = config
-            .http
-            .host
-            .clone()
-            .unwrap_or_else(|| "127.0.0.1".to_string());
-        let port = config.http.port.clone().unwrap_or(8080);
+        let host = config.server.host.as_str();
+        let port = config.server.port;
 
         let ip_addr = match IpAddr::from_str(&host) {
             Ok(ip) => ip,
@@ -259,10 +256,10 @@ pub(crate) fn io_other<E: Into<BoxError>>(error: E) -> io::Error {
 mod tests {
     use std::{io, net::SocketAddr, time::Duration};
 
-    use axum::{Router, routing::get};
     use axum::body::Body;
     use axum::response::Response;
     use axum::routing::post;
+    use axum::{routing::get, Router};
     use bytes::Bytes;
     use futures_util::{stream, StreamExt};
     use http::{Method, Request, Uri};
@@ -271,8 +268,8 @@ mod tests {
     use hyper::client::conn::http1::handshake;
     use hyper::client::conn::http1::SendRequest;
     use hyper_util::rt::TokioIo;
-    use tokio::{net::TcpStream, task::JoinHandle, time::timeout};
     use tokio::sync::oneshot;
+    use tokio::{net::TcpStream, task::JoinHandle, time::timeout};
 
     use crate::adapter::driving::presentation::http::handle::Handle;
     use crate::adapter::driving::presentation::http::server::Server;

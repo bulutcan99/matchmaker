@@ -65,13 +65,13 @@ impl Display for Token {
 impl TokenMaker for Token {
     fn generate_token(user: &str, salt: &Uuid) -> Result<Token, TokenError> {
         let config = Settings::get();
-        let key = config.password.secret_jwt.as_deref().unwrap_or_default();
+        let key = config.auth.jwt.secret.as_ref().unwrap_or_default();
         _generate_token(user, salt, key)
     }
 
     fn validate_token(token: &Token, salt: &Uuid) -> Result<(), TokenError> {
         let config = Settings::get();
-        let key = config.password.secret_jwt.as_deref().unwrap_or_default();
+        let key = config.auth.jwt.secret.as_ref().unwrap_or_default();
         _validate_token_sign_and_exp(token, salt, key)?;
         Ok(())
     }

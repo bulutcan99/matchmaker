@@ -36,7 +36,9 @@ jsonwebtoken = "9.3.0"
 dotenvy = "0.15.7"
 axum-extra = { version = "0.9.3", features = ["cookie"] }
 tower-cookies = "0.10.0"
-base64 = "0.21.7"
+base64 = "0.22.1"
 hmac = "0.12.1"
 sha2 = "0.10.8"
-
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "time"] }
+time = { version = "0.3.36", features = ["local-offset"] }

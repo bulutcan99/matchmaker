@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Error;
+use tracing_subscriber::EnvFilter;
 
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
@@ -11,6 +12,11 @@ use matchmaker::core::application::usecase::auth::service::UserService;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    tracing_subscriber::fmt()
+        .without_time()
+        .with_target(false)
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
     Settings::init()?;
     let db = DB::new().await?;
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
