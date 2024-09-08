@@ -12,7 +12,7 @@ use crate::config::Settings;
 use crate::core::application::usecase::auth::error::TokenError;
 use crate::core::domain::valueobject::date::{parse_utc, Timestamp};
 use crate::core::port::auth::TokenMaker;
-use crate::shared::base64::{b64u_decode_to_string, b64u_encode};
+use crate::shared::data::base64::{b64u_decode_to_string, b64u_encode};
 
 // endregion: --- Modules
 
