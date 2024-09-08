@@ -6,6 +6,7 @@ format = "pretty"
 # override_filter = "trace" # Uncomment this line to enable all third-party libraries
 
 [server]
+app_name = "matchmaker"
 host = "127.0.0.1"
 port = 8080
 
