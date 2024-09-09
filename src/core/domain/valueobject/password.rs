@@ -2,7 +2,7 @@ use argonautica::{Hasher, Verifier};
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::config::Settings;
+use crate::shared::config::config::Config;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HashedPassword(String);
@@ -49,6 +49,6 @@ impl From<String> for HashedPassword {
 }
 
 fn get_secret_key() -> &'static str {
-    let settings = Settings::get();
-    &settings.auth.hash.secret
+    let settings = Config::get();
+    &settings.auth.password.secret
 }

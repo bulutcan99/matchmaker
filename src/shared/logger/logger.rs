@@ -8,8 +8,7 @@ use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use crate::config;
-use crate::config::Settings;
+use crate::shared::config::config::Config;
 
 // Define an enumeration for log levels
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
@@ -91,7 +90,7 @@ static NONBLOCKING_WORK_GUARD_KEEP: OnceLock<WorkerGuard> = OnceLock::new();
 /// 3. regardless of (1) and (2) operators in production, or elsewhere can
 ///    always use `RUST_LOG` to quickly diagnose a service
 pub fn init() {
-    let config = Settings::get();
+    let config = Config::get();
     let mut layers: Vec<Box<dyn Layer<Registry> + Sync + Send>> = Vec::new();
 
     if let Some(file_appender_config) = config.logger.file_appender.as_ref() {
@@ -156,7 +155,7 @@ pub fn init() {
         let env_filter = init_env_filter(
             config.logger.override_filter.as_ref(),
             &config.logger.level,
-            &config.server.app_name,
+            &config.server.name,
         );
         tracing_subscriber::registry()
             .with(layers)
@@ -172,8 +171,6 @@ fn init_env_filter(
 ) -> EnvFilter {
     EnvFilter::try_from_default_env()
         .or_else(|_| {
-            // user wanted a specific filter, don't care about our internal whitelist
-            // or, if no override give them the default whitelisted filter (most common)
             override_filter.map_or_else(
                 || {
                     EnvFilter::try_new(

@@ -1,23 +1,21 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use tracing_subscriber::EnvFilter;
 
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
 use matchmaker::adapter::driving::presentation::http::router::{AppState, make_router};
 use matchmaker::adapter::driving::presentation::http::server::Server;
-use matchmaker::config::Settings;
 use matchmaker::core::application::usecase::auth::service::UserService;
+use matchmaker::shared::config::environment::Environment;
+use matchmaker::shared::logger::logger;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::fmt()
-        .without_time()
-        .with_target(false)
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
-    Settings::init()?;
+    logger::init();
+    Environment::from_env()
+        .load()
+        .expect("Environment loading failed!");
     let db = DB::new().await?;
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));

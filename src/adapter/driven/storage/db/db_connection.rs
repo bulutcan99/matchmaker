@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Error;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 
-use crate::config::Settings;
+use crate::shared::config::config::Config;
 
 #[derive(Debug, Clone)]
 pub struct DB {
@@ -12,7 +12,7 @@ pub struct DB {
 
 impl DB {
     pub async fn new() -> Result<Self, Error> {
-        let config = Settings::get();
+        let config = Config::get();
         let url = &config.database.uri;
         let max_conn = &config.database.max_connections;
         let pool = PgPoolOptions::new()

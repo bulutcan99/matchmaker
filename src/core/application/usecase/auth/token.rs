@@ -8,10 +8,10 @@ use hmac::{Hmac, Mac};
 use sha2::Sha512;
 use uuid::Uuid;
 
-use crate::config::Settings;
 use crate::core::application::usecase::auth::error::TokenError;
 use crate::core::domain::valueobject::date::{parse_utc, Timestamp};
 use crate::core::port::auth::TokenMaker;
+use crate::shared::config::config::Config;
 use crate::shared::data::base64::{b64u_decode_to_string, b64u_encode};
 
 // endregion: --- Modules
@@ -64,13 +64,13 @@ impl Display for Token {
 // region:    --- Web Token Gen and Validation
 impl TokenMaker for Token {
     fn generate_token(user: &str, salt: &Uuid) -> Result<Token, TokenError> {
-        let config = Settings::get();
+        let config = Config::get();
         let key = &config.auth.jwt.secret;
         _generate_token(user, salt, key)
     }
 
     fn validate_token(token: &Token, salt: &Uuid) -> Result<(), TokenError> {
-        let config = Settings::get();
+        let config = Config::get();
         let key = &config.auth.jwt.secret;
         _validate_token_sign_and_exp(token, salt, key)?;
         Ok(())

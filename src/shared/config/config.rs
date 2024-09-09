@@ -11,6 +11,7 @@ use serde_json::json;
 use tera::{Context, Tera};
 use tracing::info;
 
+use crate::shared::config::environment::Environment;
 use crate::shared::logger::logger;
 
 lazy_static! {
@@ -25,10 +26,9 @@ lazy_static! {
 pub struct Config {
     pub logger: Logger,
     pub server: Server,
-    #[cfg(feature = "with-db")]
     pub database: Database,
-    pub queue: Option<Redis>,
-    pub auth: Option<Auth>,
+    pub queue: Redis,
+    pub auth: Auth,
     #[serde(default)]
     pub workers: Workers,
     pub mailer: Option<Mailer>,
@@ -228,7 +228,8 @@ pub struct Redis {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Auth {
     /// JWT authentication config
-    pub jwt: Option<JWT>,
+    pub jwt: JWT,
+    pub password: Password,
 }
 
 /// JWT configuration structure.
@@ -241,6 +242,11 @@ pub struct JWT {
     pub secret: String,
     /// The expiration time for authentication tokens
     pub expiration: u64,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Password {
+    pub secret: String,
 }
 
 /// Defines the authentication mechanism for middleware.
@@ -284,18 +290,11 @@ pub enum JWTLocation {
 /// ```
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Server {
-    /// The address on which the server should listen on for incoming
-    /// connections.
-    #[serde(default = "default_binding")]
-    pub binding: String,
-    /// The port on which the server should listen for incoming connections.
-    pub port: i32,
-    /// The webserver host
+    pub name: String,
+    pub binding: Option<String>,
+    pub port: u16,
     pub host: String,
-    /// Identify via the `Server` header
     pub ident: Option<String>,
-    /// Middleware configurations for the server, including payload limits,
-    /// logging, and error handling.
     pub middlewares: Middlewares,
 }
 
@@ -367,6 +366,18 @@ pub struct Middlewares {
     pub remote_ip: Option<RemoteIPConfig>,
     /// Configure fallback behavior when hitting a missing URL
     pub fallback: Option<FallbackConfig>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SecureHeadersConfig {
+    pub preset: Option<String>,
+    pub overrides: Option<BTreeMap<String, String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RemoteIPConfig {
+    pub enable: bool,
+    pub trusted_proxies: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -503,10 +514,19 @@ pub struct MailerAuth {
     pub password: String,
 }
 
+static SETTINGS: OnceLock<Config> = OnceLock::new();
+
 impl Config {
     pub fn new(env: &Environment) -> Result<Self> {
         let config = Self::from_folder(env, DEFAULT_FOLDER.as_path())?;
+        SETTINGS
+            .set(config.clone())
+            .map_err(|_| anyhow!("Settings already initialized"))?;
         Ok(config)
+    }
+
+    pub fn get() -> &'static Config {
+        let settings = SETTINGS.get().expect("SETTINGS has not been initialized!");
     }
 
     pub fn from_folder(env: &Environment, path: &Path) -> Result<Self> {
@@ -519,29 +539,14 @@ impl Config {
         let selected_path = files
             .iter()
             .find(|p| p.exists())
-            .ok_or_else(|| Error::Message("no configuration file found".to_string()))?;
+            .ok_or_else(|| anyhow!("no configuration file found".to_string()))?;
 
         info!(selected_path =? selected_path, "loading environment from");
 
         let content = fs::read_to_string(selected_path)?;
         let rendered = render_string(&content, &json!({}))?;
 
-        serde_yaml::from_str(&rendered)
-            .map_err(|err| Error::YAMLFile(err, selected_path.to_string_lossy().to_string()))
-    }
-
-    /// Get a reference to the JWT configuration.
-    ///
-    /// # Errors
-    /// return an error when jwt token not configured
-    pub fn get_jwt_config(&self) -> Result<&JWT, Error> {
-        self.auth
-            .as_ref()
-            .and_then(|auth| auth.jwt.as_ref())
-            .map_or_else(
-                || Err(Error::Any("no JWT config found".to_string().into())),
-                Ok,
-            )
+        serde_yaml::from_str(&rendered).map_err(|err| anyhow!("{}", err))
     }
 }
 
