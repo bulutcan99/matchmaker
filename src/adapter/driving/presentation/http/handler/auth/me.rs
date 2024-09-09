@@ -1,9 +1,8 @@
-use std::sync::Arc;
-
-use axum::Extension;
 use axum::extract::State;
+use axum::Extension;
 use http::StatusCode;
 use serde_derive::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use crate::adapter::driving::presentation::http::middleware::auth::ExtError;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;

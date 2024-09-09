@@ -23,7 +23,7 @@ pub struct UserRegisterRequest {
         max = 20,
         message = "First name is not valid. It should be between 3 and 20 characters."
     ))]
-    pub first_name: String,
+    pub name: String,
 
     #[serde(default)]
     #[validate(length(
@@ -31,7 +31,7 @@ pub struct UserRegisterRequest {
         max = 20,
         message = "Last name is not valid. It should be between 3 and 20 characters."
     ))]
-    pub last_name: String,
+    pub surname: String,
 
     #[serde(default)]
     #[validate(email(message = "Email address is not valid."))]

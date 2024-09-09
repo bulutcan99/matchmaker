@@ -1,11 +1,5 @@
+use crate::shared::ctx::error::Error;
 use uuid::Uuid;
-// UUID kullanımı için uuid crate'i ekleyin
-
-// Hata türünüzü tanımlayın
-#[derive(Debug)]
-pub enum Error {
-    CtxCannotNewRootCtx,
-}
 
 pub type Result<T> = std::result::Result<T, Error>;
 

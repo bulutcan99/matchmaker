@@ -48,8 +48,8 @@ where
         }
 
         let new_user = User::new(
-            input.first_name.clone(),
-            input.last_name.clone(),
+            input.name.clone(),
+            input.surname.clone(),
             input.email.clone(),
             input.password.clone(),
             role::Role::User,

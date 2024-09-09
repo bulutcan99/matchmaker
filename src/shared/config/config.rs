@@ -240,7 +240,7 @@ pub struct JWT {
     pub location: Option<JWTLocation>,
     /// The secret key For JWT token
     pub secret: String,
-    /// The expiration time for authentication tokens
+    /// The expiration time sec for authentication tokens
     pub expiration: u64,
 }
 

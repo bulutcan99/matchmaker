@@ -1,25 +1,24 @@
 use std::convert::Infallible;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::sync::Arc;
 
 use axum::body::Body;
-use axum::extract::{Request, State};
-use axum::Json;
+use axum::http::Request;
+
+use axum::extract::State;
 use axum::middleware::Next;
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
+use axum::Extension;
 use axum_extra::extract::cookie::Cookie;
-use http::{header, StatusCode};
-use log::debug;
 use serde_derive::Serialize;
-use tower_cookies::cookie::CookieJar;
 use tower_cookies::Cookies;
 
 use crate::adapter::driving::presentation::http::middleware::cookie::{
-    AUTH_TOKEN, set_token_cookie,
+    set_token_cookie, AUTH_TOKEN,
 };
 use crate::adapter::driving::presentation::http::router::AppState;
-use crate::core::application::usecase::auth::token::Token;
-use crate::core::port::auth::TokenMaker;
+use crate::core::application::usecase::auth::token::{validate_web_token, Token};
+use crate::core::domain::entity::user::User;
 use crate::core::port::user::UserManagement;
 
 #[derive(Clone, Serialize, Debug)]
@@ -43,21 +42,28 @@ pub async fn is_authenticated<S>(
 where
     S: UserManagement + 'static,
 {
-    debug!("{:<12} - mw_ctx_resolve", "MIDDLEWARE");
-
-    let ctx_ext_result = ctx_resolve(app, &cookies).await;
+    let app_extension = Extension(app);
+    let ctx_ext_result = ctx_resolve(app_extension, &cookies).await;
 
     if ctx_ext_result.is_err() && !matches!(ctx_ext_result, Err(ExtError::TokenNotInCookieOrHeader))
     {
         cookies.remove(Cookie::from(AUTH_TOKEN));
     }
 
-    req.extensions_mut().insert(ctx_ext_result);
+    if let Ok(user) = ctx_ext_result {
+        // Insert the authenticated user into request extensions
+        req.extensions_mut().insert(user);
+    } else {
+        req.extensions_mut().insert(ctx_ext_result);
+    }
 
     Ok(next.run(req).await)
 }
 
-async fn ctx_resolve<S>(app_state: Arc<AppState<S>>, cookies: &Cookies) -> Result<(), ExtError>
+async fn ctx_resolve<S>(
+    Extension(app_state): Extension<Arc<AppState<S>>>,
+    cookies: &Cookies,
+) -> Result<User, ExtError>
 where
     S: UserManagement + 'static,
 {
@@ -65,6 +71,7 @@ where
         .get(AUTH_TOKEN)
         .map(|c| c.value().to_string())
         .ok_or(ExtError::TokenNotInCookieOrHeader)?;
+
     let token: Token = token.parse().map_err(|_| ExtError::TokenWrongFormat)?;
 
     let user = app_state
@@ -72,9 +79,11 @@ where
         .me(&token.ident)
         .await
         .map_err(|_| ExtError::UserNotFound)?;
-    Token::validate_token(&token, &user.id.unwrap()).map_err(|_| ExtError::FailValidate)?;
-    set_token_cookie(cookies, &user.email, &user.id.unwrap())
+
+    validate_web_token(&token, user.id.unwrap()).map_err(|_| ExtError::FailValidate)?;
+
+    set_token_cookie(&cookies, &user.email, user.id.unwrap())
         .map_err(|_| ExtError::CannotSetTokenCookie)?;
 
-    Ok(())
+    Ok(user)
 }

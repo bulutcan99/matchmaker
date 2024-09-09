@@ -83,7 +83,7 @@ where
     let result = app.user_service.login(&login_user).await;
 
     match result {
-        Ok(user_id) => match set_token_cookie(&cookies, &login_user.email, &user_id) {
+        Ok(user_id) => match set_token_cookie(&cookies, &login_user.email, user_id) {
             Ok(()) => {
                 let res = UserLoginResponse { user_id };
                 Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
