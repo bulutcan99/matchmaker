@@ -514,19 +514,19 @@ pub struct MailerAuth {
     pub password: String,
 }
 
-static SETTINGS: OnceLock<Config> = OnceLock::new();
+static CONFIG: OnceLock<Config> = OnceLock::new();
 
 impl Config {
     pub fn new(env: &Environment) -> Result<Self> {
         let config = Self::from_folder(env, DEFAULT_FOLDER.as_path())?;
-        SETTINGS
+        CONFIG
             .set(config.clone())
             .map_err(|_| anyhow!("Settings already initialized"))?;
         Ok(config)
     }
 
     pub fn get() -> &'static Config {
-        let settings = SETTINGS.get().expect("SETTINGS has not been initialized!");
+        CONFIG.get().expect("SETTINGS has not been initialized!")
     }
 
     pub fn from_folder(env: &Environment, path: &Path) -> Result<Self> {

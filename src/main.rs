@@ -12,10 +12,10 @@ use matchmaker::shared::logger::logger;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    logger::init();
     Environment::from_env()
         .load()
         .expect("Environment loading failed!");
+    logger::init();
     let db = DB::new().await?;
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));

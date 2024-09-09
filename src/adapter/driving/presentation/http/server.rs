@@ -66,7 +66,6 @@ impl Server {
         let host = config.server.host.as_str();
         let port = config.server.port;
 
-        println!("host {}", &host);
         let ip_addr = match IpAddr::from_str(&host) {
             Ok(ip) => ip,
             Err(_) => {
