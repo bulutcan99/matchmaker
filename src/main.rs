@@ -4,7 +4,7 @@ use anyhow::Error;
 
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
-use matchmaker::adapter::driving::presentation::http::router::{AppState, make_router};
+use matchmaker::adapter::driving::presentation::http::router::{make_router, AppState};
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::core::application::usecase::auth::service::UserService;
 use matchmaker::shared::config::environment::Environment;
@@ -26,7 +26,6 @@ async fn main() -> Result<(), Error> {
         .serve(route.into_make_service())
         .await
         .unwrap();
-
     Ok(())
 }
 
