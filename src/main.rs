@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-
+use log::info;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
 use matchmaker::adapter::driving::presentation::http::router::{make_router, AppState};
@@ -16,16 +16,15 @@ async fn main() -> Result<(), Error> {
         .load()
         .expect("Environment loading failed!");
     logger::init();
+    info!("Logger initialized!");
     let db = DB::new().await?;
+    info!("DB initialized!");
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
     let user_service = Arc::new(UserService::new(Arc::clone(&user_repository)));
     let app_state = Arc::new(AppState::new(user_service));
     let route = make_router(app_state);
-    Server::bind()
-        .serve(route.into_make_service())
-        .await
-        .unwrap();
+    Server::bind().serve(route.into_make_service()).await?;
     Ok(())
 }
 
