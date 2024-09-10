@@ -14,6 +14,8 @@ use crate::adapter::driving::presentation::http::response::response::{
 use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::RegisterError;
 use crate::core::port::user::UserManagement;
+use crate::shared::mailer::mailer::send_verification_email;
+use crate::shared::mailer::verification::VerificationToken;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct UserRegisterRequest {
@@ -82,6 +84,11 @@ where
     let result = app.user_service.register(&register_user).await;
     match result {
         Ok(registered_user) => {
+            let email_token = VerificationToken::new();
+            let email_token = email_token.token();
+            send_verification_email(register_user.email.as_str(), email_token)
+                .await
+                .expect("Email not send!");
             let res = UserRegisterResponse {
                 user_id: registered_user,
             };
