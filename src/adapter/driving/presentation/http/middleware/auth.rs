@@ -21,6 +21,30 @@ use crate::core::application::usecase::auth::token::{validate_web_token, Token};
 use crate::core::domain::entity::user::User;
 use crate::core::port::user::UserManagement;
 
+pub async fn is_verified<S>(
+    State(app): State<Arc<AppState<S>>>,
+    mut req: Request<Body>,
+    next: Next,
+) -> Result<Response, Infallible>
+where
+    S: UserManagement + 'static,
+{
+    let app_extension = Extension(app);
+    let user = app
+        .user_service
+        .me(req.body("email"))
+        .await
+        .map_err(|_| ExtError::UserNotFound)?;
+    if let Ok(user) = ctx_ext_result {
+        // Insert the authenticated user into request extensions
+        req.extensions_mut().insert(user);
+    } else {
+        req.extensions_mut().insert(ctx_ext_result);
+    }
+
+    Ok(next.run(req).await)
+}
+
 #[derive(Clone, Serialize, Debug)]
 pub enum ExtError {
     TokenNotInCookieOrHeader,

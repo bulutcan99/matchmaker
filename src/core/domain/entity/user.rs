@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::core::domain::valueobject::date::Timestamp;
-use crate::core::domain::valueobject::password;
 use crate::core::domain::valueobject::password::HashedPassword;
 use crate::core::domain::valueobject::role::Role;
 
@@ -15,19 +14,25 @@ pub struct User {
     pub email: String,
     pub role: Role,
     pub password_hash: HashedPassword,
+    pub is_blocked: bool,
+    pub is_verified: bool,
+    pub google_oauth_id: Option<String>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
 
 impl User {
     pub fn new(name: String, surname: String, email: String, password: String, role: Role) -> Self {
-        let hashed_password = password::HashedPassword::new(password.as_str(), &email);
+        let hashed_password = HashedPassword::new(password.as_str(), &email);
         User {
             id: Some(Uuid::new_v4()),
             name,
             surname,
             email,
             role,
+            is_blocked: false,
+            is_verified: false,
+            google_oauth_id: None,
             password_hash: hashed_password.unwrap(),
             created_at: Timestamp::now_utc(),
             updated_at: Timestamp::now_utc(),

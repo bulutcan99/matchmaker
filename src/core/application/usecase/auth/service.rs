@@ -52,7 +52,7 @@ where
             input.surname.clone(),
             input.email.clone(),
             input.password.clone(),
-            role::Role::User,
+            role::Role::USER,
         );
 
         let registered_id = self
