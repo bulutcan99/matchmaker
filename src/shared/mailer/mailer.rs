@@ -1,3 +1,5 @@
+//todo: add appcontext and mailer from loco!
+
 use crate::shared::mailer::mailer::MailerError::InvalidEmailFormat;
 use dotenv::dotenv;
 use futures_util::TryFutureExt;
