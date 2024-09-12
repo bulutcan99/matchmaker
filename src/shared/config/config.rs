@@ -495,13 +495,9 @@ pub type Initializers = BTreeMap<String, serde_json::Value>;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SmtpMailer {
     pub enable: bool,
-    /// SMTP host. for example: localhost, smtp.gmail.com etc.
     pub host: String,
-    /// SMTP port/
     pub port: u16,
-    /// Enable TLS
     pub secure: bool,
-    /// Auth SMTP server
     pub auth: Option<MailerAuth>,
 }
 
@@ -554,5 +550,3 @@ pub fn render_string(tera_template: &str, locals: &serde_json::Value) -> Result<
     let text = Tera::one_off(tera_template, &Context::from_serialize(locals)?, false)?;
     Ok(text)
 }
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;

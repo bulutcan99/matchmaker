@@ -15,8 +15,6 @@ use crate::adapter::driving::presentation::http::response::response::{
 use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::RegisterError;
 use crate::core::port::user::UserManagement;
-use crate::shared::mailer::mailer::send_verification_email;
-use crate::shared::mailer::verification::VerificationToken;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct UserRegisterRequest {

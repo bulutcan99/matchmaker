@@ -1,11 +1,10 @@
+use crate::shared::error::Result;
 use std::env;
 use std::str::FromStr;
 
 use dotenvy::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
-
-use crate::shared::config::config::Result;
 
 use super::config::Config;
 

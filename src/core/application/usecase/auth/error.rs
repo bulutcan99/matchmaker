@@ -1,7 +1,6 @@
 use std::fmt;
 
 use serde_derive::{Deserialize, Serialize};
-pub type Result<T> = core::result::Result<T, TokenError>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TokenError {
