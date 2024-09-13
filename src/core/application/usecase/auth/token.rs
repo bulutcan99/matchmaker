@@ -1,5 +1,5 @@
-use crate::core::application::usecase::auth::error::Result;
 use crate::core::application::usecase::auth::error::TokenError;
+use crate::shared::error::Result;
 
 use crate::core::domain::valueobject::date::parse_utc;
 use crate::shared::config::config::Config;
@@ -93,32 +93,28 @@ fn _generate_token(ident: &str, duration_sec: &u64, salt: Uuid, key: &str) -> Re
 }
 
 fn _validate_token_sign_and_exp(origin_token: &Token, salt: Uuid, key: &str) -> Result<()> {
-    // -- Validate signature.
     let new_sign_b64u = _token_sign_into_b64u(&origin_token.ident, &origin_token.exp, salt, key)?;
 
     if new_sign_b64u != origin_token.sign_b64u {
-        return Err(TokenError::SignatureNotMatching);
+        return Err(TokenError::SignatureNotMatching.into());
     }
 
-    // -- Validate expiration.
     let origin_exp = parse_utc(&origin_token.exp).map_err(|_| TokenError::ExpNotIso)?;
     let now = now_utc();
 
     if origin_exp < now {
-        return Err(TokenError::Expired);
+        return Err(TokenError::Expired.into());
     }
 
     Ok(())
 }
 
-/// Create token signature from token parts
-/// and salt.
 fn _token_sign_into_b64u(ident: &str, exp: &str, salt: Uuid, key: &str) -> Result<String> {
     let content = format!("{}.{}", b64u_encode(ident), b64u_encode(exp));
 
     // -- Create a HMAC-SHA-512 from key.
     let mut hmac_sha512 = Hmac::<Sha512>::new_from_slice(key.as_ref())
-        .map_err(|_| TokenError::HmacFailNewFromSlice)?;
+        .map_err(|_| TokenError::HmacFailNewFromSlice.into())?;
 
     // -- Add content.
     hmac_sha512.update(content.as_bytes());
@@ -131,5 +127,4 @@ fn _token_sign_into_b64u(ident: &str, exp: &str, salt: Uuid, key: &str) -> Resul
 
     Ok(result)
 }
-
 // endregion: --- (private) Token Gen and Validation

@@ -29,12 +29,10 @@ const TEXT: &str = "text.t";
 /// Reads an embedded file from the provided directory and returns its content
 /// as a string.
 fn embedded_file(dir: &Dir<'_>, name: &str) -> Result<String> {
-    Ok(String::from_utf8_lossy(
-        dir.get_file(name)
-            .ok_or_else(|| anyhow!((format!("no mailer template file found {name}")))?)
-            .contents(),
-    )
-    .to_string())
+    let file = dir
+        .get_file(name)
+        .ok_or_else(|| anyhow!(format!("no mailer template file found {name}")))?;
+    Ok(String::from_utf8_lossy(file.contents()).to_string())
 }
 
 /// A structure representing the content of an email, including subject, text,

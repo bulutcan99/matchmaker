@@ -14,6 +14,12 @@ pub enum TokenError {
     Expired,
 }
 
+impl fmt::Display for TokenError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum RegisterError<T> {
     BadClientData(T),

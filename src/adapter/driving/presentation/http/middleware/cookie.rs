@@ -1,12 +1,12 @@
 use tower_cookies::{Cookie, Cookies};
 use uuid::Uuid;
 
-use crate::core::application::usecase::auth::error::TokenError;
 use crate::core::application::usecase::auth::token::generate_web_token;
+use crate::shared::error::Result;
 
 pub const AUTH_TOKEN: &str = "token";
 
-pub fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Result<(), TokenError> {
+pub fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Result<()> {
     let token = generate_web_token(user, salt)?;
 
     let mut cookie = Cookie::new(AUTH_TOKEN, token.to_string());
@@ -18,7 +18,7 @@ pub fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Result<(),
     Ok(())
 }
 
-pub fn remove_token_cookie(cookies: &Cookies) -> Result<(), TokenError> {
+pub fn remove_token_cookie(cookies: &Cookies) -> Result<()> {
     let mut cookie = Cookie::from(AUTH_TOKEN);
     cookie.set_path("/");
 
