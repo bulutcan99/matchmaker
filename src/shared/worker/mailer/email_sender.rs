@@ -114,8 +114,7 @@ impl EmailSender {
                 xp.send(msg).await?;
             }
             EmailTransport::Test(xp) => {
-                xp.send(&msg)
-                    .map_err(|_| anyhow!("sending email error".to_string().into()))?;
+                xp.send(&msg).map_err(|_| anyhow!("sending email error"))?;
             }
         };
         Ok(())

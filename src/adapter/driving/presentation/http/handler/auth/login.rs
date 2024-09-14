@@ -72,6 +72,17 @@ where
     }
 }
 
+impl<E> From<anyhow::Error> for ApiResponseData<E>
+where
+    E: Serialize + 'static,
+{
+    fn from(error: anyhow::Error) -> Self {
+        tracing::error!("Unhandled error: {:?}", error);
+
+        ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+}
+
 pub async fn login_handler<S>(
     State(app): State<Arc<AppState<S>>>,
     cookies: Cookies,

@@ -1,6 +1,7 @@
 use crate::shared::error::Result;
 use crate::shared::worker::mailer::template::Template;
 use crate::shared::worker::service::{AppWorker, TaskContext};
+use anyhow::anyhow;
 use async_trait::async_trait;
 use include_dir::Dir;
 use serde_derive::{Deserialize, Serialize};
@@ -72,7 +73,7 @@ pub trait Mailer {
 
         MailerWorker::perform_later(ctx, email.clone())
             .await
-            .map_err(Box::from)?;
+            .map_err(|e| anyhow!(e))?;
         Ok(())
     }
 
