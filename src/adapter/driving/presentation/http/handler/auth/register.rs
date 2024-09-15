@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::extract::State;
 use axum::Json;
 use http::StatusCode;
-use log::error;
 use serde_derive::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::{Validate, ValidationErrors};
@@ -83,16 +82,8 @@ where
     let result = app.user_service.register(&register_user).await;
     match result {
         Ok(registered_user) => {
-            let email_token = VerificationToken::new();
-            let email_token_string = email_token.token().to_string();
-
             let user_email = register_user.email.clone();
-
-            tokio::spawn(async move {
-                if let Err(e) = send_verification_email(&user_email, &email_token_string).await {
-                    error!("Failed to send email: {:?}", e);
-                }
-            });
+            AuthMailer::send_welcome(&ctx, &user).await?;
 
             let res = UserRegisterResponse {
                 user_id: registered_user,
