@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::domain::valueobject::password::HashedPassword;
 use crate::core::domain::valueobject::role::Role;
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct User {
     pub id: Option<Uuid>,
@@ -14,9 +13,12 @@ pub struct User {
     pub email: String,
     pub role: Role,
     pub password_hash: HashedPassword,
-    pub is_blocked: bool,
-    pub is_verified: bool,
-    pub google_oauth_id: Option<String>,
+    pub reset_token: Option<String>,
+    pub reset_sent_at: Option<Timestamp>,
+    pub email_verification_token: Option<String>,
+    pub email_verification_sent_at: Option<Timestamp>,
+    pub email_verified_at: Option<Timestamp>,
+    pub blocked_at: Option<Timestamp>,
     pub created_at: Timestamp,
     pub updated_at: Timestamp,
 }
@@ -30,10 +32,13 @@ impl User {
             surname,
             email,
             role,
-            is_blocked: false,
-            is_verified: false,
-            google_oauth_id: None,
             password_hash: hashed_password.unwrap(),
+            reset_token: None,
+            reset_sent_at: None,
+            email_verification_token: None,
+            email_verification_sent_at: None,
+            email_verified_at: None,
+            blocked_at: None,
             created_at: Timestamp::now_utc(),
             updated_at: Timestamp::now_utc(),
         }
