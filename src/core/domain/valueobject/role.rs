@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
 
-#[derive(Debug, Clone, Deserialize, Serialize, Type)]
+#[derive(Debug, Clone, Deserialize, Serialize, Type, PartialEq)]
 #[sqlx(type_name = "TEXT")]
 pub enum Role {
     ADMIN,

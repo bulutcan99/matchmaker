@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::domain::valueobject::password::HashedPassword;
 use crate::core::domain::valueobject::role::Role;
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone,PartialEq, Deserialize, Serialize)]
 pub struct User {
     pub id: Option<Uuid>,
     pub name: String,
@@ -51,4 +51,6 @@ impl User {
 
         Ok(())
     }
+
+    pub
 }

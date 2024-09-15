@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use crate::shared::config::config::Config;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct HashedPassword(String);
 
 #[derive(Debug, Error)]

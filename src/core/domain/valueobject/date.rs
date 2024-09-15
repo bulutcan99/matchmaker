@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::types::time::OffsetDateTime;
 use tower_cookies::cookie::time::format_description::well_known::Rfc3339;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Timestamp {
     pub datetime: DateTime<Utc>,
 }
