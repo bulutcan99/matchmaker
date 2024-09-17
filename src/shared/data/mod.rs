@@ -1,4 +1,3 @@
-use crate::shared::error::Result;
 use tera::{Context, Tera};
 
 pub mod base64;

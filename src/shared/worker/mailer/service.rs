@@ -1,7 +1,6 @@
-use crate::shared::error::Result;
+use crate::shared::worker::mailer::error::MailerError;
 use crate::shared::worker::mailer::template::Template;
 use crate::shared::worker::service::{AppWorker, TaskContext};
-use anyhow::anyhow;
 use async_trait::async_trait;
 use include_dir::Dir;
 use serde_derive::{Deserialize, Serialize};
@@ -50,21 +49,10 @@ pub struct MailerOpts {
     pub reply_to: Option<String>,
 }
 
-/// The `Mailer` trait defines methods for sending emails and processing email
-/// templates.
 #[async_trait]
 pub trait Mailer {
-    /// Returns default options for the mailer.
-    #[must_use]
-    fn opts() -> MailerOpts {
-        MailerOpts {
-            from: DEFAULT_FROM_SENDER.to_string(),
-            ..Default::default()
-        }
-    }
-
     /// Sends an email using the provided [`TaskContext`] and email details.
-    async fn mail(ctx: &TaskContext, email: &Email) -> Result<()> {
+    async fn mail(ctx: &TaskContext, email: &Email) -> Result<(), MailerError> {
         let opts = Self::opts();
         let mut email = email.clone();
 
@@ -73,14 +61,22 @@ pub trait Mailer {
 
         MailerWorker::perform_later(ctx, email.clone())
             .await
-            .map_err(|e| anyhow!(e))?;
+            .map_err(|e| MailerError::SendEmailError(e.to_string()))?;
+
         Ok(())
     }
 
     /// Renders and sends an email using the provided [`TaskContext`], template
     /// directory, and arguments.
-    async fn mail_template(ctx: &TaskContext, dir: &Dir<'_>, args: Args) -> Result<()> {
-        let content = Template::new(dir).render(&args.locals)?;
+    async fn mail_template(
+        ctx: &TaskContext,
+        dir: &Dir<'_>,
+        args: Args,
+    ) -> Result<(), MailerError> {
+        let content = Template::new(dir)
+            .render(&args.locals)
+            .map_err(|_| MailerError::TemplateRenderError)?;
+
         Self::mail(
             ctx,
             &Email {
@@ -94,12 +90,12 @@ pub trait Mailer {
                 cc: args.cc.clone(),
             },
         )
-        .await
+        .await?;
+
+        Ok(())
     }
 }
 
-/// The [`MailerWorker`] struct represents a worker responsible for asynchronous
-/// email processing.
 #[allow(clippy::module_name_repetitions)]
 pub struct MailerWorker {
     pub ctx: TaskContext,
@@ -113,22 +109,18 @@ impl AppWorker<Email> for MailerWorker {
     }
 }
 
-/// Implementation of the [`Worker`] trait for the [`MailerWorker`].
 #[async_trait]
 impl Worker<Email> for MailerWorker {
-    /// Returns options for the mailer worker, specifying the queue to process.
-    fn opts() -> sidekiq::WorkerOpts<Email, Self> {
-        sidekiq::WorkerOpts::new().queue("mailer")
-    }
-
-    /// Performs the email sending operation using the provided [`TaskContext`]
-    /// and email details.
-    async fn perform(&self, email: Email) -> sidekiq::Result<()> {
+    async fn perform(&self, email: Email) -> Result<(), MailerError> {
         if let Some(mailer) = &self.ctx.mailer {
-            Ok(mailer.mail(&email).await.map_err(Box::from)?)
+            mailer
+                .mail(&email)
+                .await
+                .map_err(|e| sidekiq::Error::Message(e.to_string()))?;
+            Ok(())
         } else {
             Err(sidekiq::Error::Message(
-                "attempting to send email but no email sender configured".to_string(),
+                MailerError::NoMailerConfigured.to_string(),
             ))
         }
     }

@@ -15,7 +15,6 @@
 //! ```
 
 use crate::shared::data;
-use crate::shared::error::Result;
 use anyhow::anyhow;
 use include_dir::Dir;
 

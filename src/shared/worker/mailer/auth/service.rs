@@ -1,5 +1,6 @@
 use crate::core::domain::entity::user::User;
-use crate::shared::error::Result;
+use crate::shared::config::config::Config;
+use crate::shared::worker::mailer::auth::error::AuthMailerError;
 use crate::shared::worker::mailer::service::{Args, Mailer};
 use crate::shared::worker::service::TaskContext;
 use include_dir::{include_dir, Dir};
@@ -17,7 +18,9 @@ impl AuthMailer {
     /// # Errors
     ///
     /// When email sending is failed
-    pub async fn send_welcome(ctx: &TaskContext, user: &User) -> Result<()> {
+    pub async fn send_welcome(ctx: &TaskContext, user: &User) -> Result<(), AuthMailerError> {
+        let config = Config::get();
+        let full_url = format!("{}:{}", config.server.host, config.server.port);
         Self::mail_template(
             ctx,
             &WELCOME,
@@ -26,12 +29,13 @@ impl AuthMailer {
                 locals: json!({
                   "name": user.name,
                   "verifyToken": user.email_verification_token,
-                  "domain": ctx.config.server.full_url()
+                  "domain": full_url,
                 }),
                 ..Default::default()
             },
         )
-        .await?;
+        .await
+        .map_err(|_| AuthMailerError::SendWelcomeError(user.email.to_string()))?;
 
         Ok(())
     }
@@ -41,7 +45,9 @@ impl AuthMailer {
     /// # Errors
     ///
     /// When email sending is failed
-    pub async fn forgot_password(ctx: &TaskContext, user: &User) -> Result<()> {
+    pub async fn forgot_password(ctx: &TaskContext, user: &User) -> Result<(), AuthMailerError> {
+        let config = Config::get();
+        let full_url = format!("{}:{}", config.server.host, config.server.port);
         Self::mail_template(
             ctx,
             &FORGOT,
@@ -50,12 +56,13 @@ impl AuthMailer {
                 locals: json!({
                   "name": user.name,
                   "resetToken": user.reset_token,
-                  "domain": ctx.config.server.full_url()
+                  "domain": full_url,
                 }),
                 ..Default::default()
             },
         )
-        .await?;
+        .await
+        .map_err(|_| AuthMailerError::SendForgotPasswordError(user.email.to_string()))?;
 
         Ok(())
     }

@@ -3,7 +3,6 @@
 //! sending emails with options like sender, recipient, subject, and content.
 
 use crate::shared::config::config::Config;
-use crate::shared::error::Result;
 use crate::shared::worker::mailer::service::{Email, DEFAULT_FROM_SENDER};
 use anyhow::anyhow;
 use lettre::message::MultiPart;

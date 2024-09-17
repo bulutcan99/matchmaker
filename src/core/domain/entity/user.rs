@@ -51,6 +51,4 @@ impl User {
 
         Ok(())
     }
-
-    pub
 }
