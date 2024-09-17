@@ -14,6 +14,7 @@ use crate::adapter::driving::presentation::http::response::response::{
 use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::RegisterError;
 use crate::core::port::user::UserManagement;
+use crate::shared::worker::mailer::auth::service::AuthMailer;
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
 pub struct UserRegisterRequest {
@@ -61,7 +62,9 @@ impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
             RegisterError::UserAlreadyRegistered => {
                 ApiResponseData::error(None, "user already registered", StatusCode::FORBIDDEN)
             }
-            RegisterError::DbInternalError | RegisterError::HashingError => {
+            RegisterError::DbInternalError
+            | RegisterError::HashingError
+            | RegisterError::InternalError => {
                 ApiResponseData::status_code(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
@@ -83,10 +86,12 @@ where
     match result {
         Ok(registered_user) => {
             let user_email = register_user.email.clone();
-            AuthMailer::send_welcome(&ctx, &user).await?;
+            AuthMailer::send_welcome(&app.task_context, &registered_user)
+                .await
+                .map_err(|e| RegisterError::InternalError)?;
 
             let res = UserRegisterResponse {
-                user_id: registered_user,
+                user_id: registered_user.id.unwrap(),
             };
             Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
         }

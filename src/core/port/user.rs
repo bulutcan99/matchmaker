@@ -1,6 +1,5 @@
 use anyhow::Error;
 use async_trait::async_trait;
-use uuid::Uuid;
 use validator::ValidationErrors;
 
 use crate::adapter::driving::presentation::http::handler::auth::login::UserLoginRequest;
@@ -10,7 +9,7 @@ use crate::core::domain::entity::user::User;
 
 #[async_trait]
 pub trait UserRepo: Send + Sync {
-    async fn save(&self, entity: &User) -> Result<Uuid, Error>;
+    async fn save(&self, entity: &User) -> Result<User, Error>;
     async fn update(&self, id_str: &str, entity: &User) -> Result<User, Error>;
     async fn delete(&self, id_str: &str) -> Result<(), Error>;
     async fn find_all(&self) -> Result<Vec<User>, Error>;
@@ -23,8 +22,8 @@ pub trait UserManagement: Send + Sync {
     async fn register(
         &self,
         input: &UserRegisterRequest,
-    ) -> Result<Uuid, RegisterError<ValidationErrors>>;
-    async fn login(&self, input: &UserLoginRequest) -> Result<Uuid, LoginError>;
+    ) -> Result<User, RegisterError<ValidationErrors>>;
+    async fn login(&self, input: &UserLoginRequest) -> Result<User, LoginError>;
     async fn me(&self, email: &str) -> Result<User, MeError>;
     // async fn update_profile(&self, input: &UserRegisterRequest) -> Result<(), Error>;
 }

@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-use anyhow::{anyhow, Error};
+use anyhow::anyhow;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_derive::Serialize;

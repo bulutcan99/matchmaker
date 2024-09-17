@@ -104,14 +104,14 @@ fn _validate_token_sign_and_exp(
     let new_sign_b64u = _token_sign_into_b64u(&origin_token.ident, &origin_token.exp, salt, key)?;
 
     if new_sign_b64u != origin_token.sign_b64u {
-        return Err((TokenError::SignatureNotMatching));
+        return Err(TokenError::SignatureNotMatching);
     }
 
     let origin_exp = parse_utc(&origin_token.exp).map_err(|_| TokenError::ExpNotIso)?;
     let now = now_utc();
 
     if origin_exp < now {
-        return Err((TokenError::Expired));
+        return Err(TokenError::Expired);
     }
 
     Ok(())

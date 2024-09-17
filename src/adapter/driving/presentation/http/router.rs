@@ -11,20 +11,25 @@ use crate::adapter::driving::presentation::http::handler::auth::me::me_handler;
 use crate::adapter::driving::presentation::http::handler::auth::register::register_handler;
 use crate::adapter::driving::presentation::http::middleware::auth::is_authenticated;
 use crate::core::port::user::UserManagement;
+use crate::shared::worker::service::TaskContext;
 
 pub struct AppState<S>
 where
     S: UserManagement + 'static,
 {
     pub user_service: Arc<S>,
+    pub task_context: TaskContext,
 }
 
 impl<S> AppState<S>
 where
     S: UserManagement + 'static,
 {
-    pub fn new(user_service: Arc<S>) -> Self {
-        Self { user_service }
+    pub fn new(user_service: Arc<S>, task_context: TaskContext) -> Self {
+        Self {
+            user_service,
+            task_context,
+        }
     }
 }
 

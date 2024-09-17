@@ -3,9 +3,7 @@ use crate::shared::worker::mailer::email_sender::EmailSender;
 use anyhow::anyhow;
 use async_trait::async_trait;
 pub use bb8::Pool;
-use erased_serde::Serialize;
 use sidekiq::{Error, RedisConnectionManager, Worker};
-use std::thread::spawn;
 use tracing::error;
 
 #[derive(Clone)]

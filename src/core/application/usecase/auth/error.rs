@@ -25,6 +25,7 @@ pub enum RegisterError<T> {
     BadClientData(T),
     UserAlreadyRegistered,
     DbInternalError,
+    InternalError,
     HashingError,
 }
 

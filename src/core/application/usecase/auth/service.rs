@@ -36,7 +36,7 @@ where
     async fn register(
         &self,
         input: &UserRegisterRequest,
-    ) -> Result<Uuid, RegisterError<ValidationErrors>> {
+    ) -> Result<User, RegisterError<ValidationErrors>> {
         let found_user = self
             .user_repository
             .find_by_email(input.email.as_str())
@@ -55,13 +55,13 @@ where
             role::Role::USER,
         );
 
-        let registered_id = self
+        let registered_user = self
             .user_repository
             .save(&new_user)
             .await
             .map_err(|_| RegisterError::DbInternalError)?;
 
-        Ok(registered_id)
+        Ok(registered_user)
     }
 
     async fn login(&self, input: &UserLoginRequest) -> Result<Uuid, LoginError> {
