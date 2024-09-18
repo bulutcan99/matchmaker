@@ -4,6 +4,7 @@ use anyhow::Error;
 use log::info;
 use matchmaker::adapter::driven::storage::db::db_connection::DB;
 use matchmaker::adapter::driven::storage::db::repository::user::UserRepository;
+use matchmaker::adapter::driven::storage::memory::redis_connection::connect_redis;
 use matchmaker::adapter::driving::presentation::http::router::{make_router, AppState};
 use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::core::application::usecase::auth::service::UserService;
@@ -12,7 +13,7 @@ use matchmaker::shared::logger::logger;
 use matchmaker::shared::worker::mailer::email_sender::EmailSender;
 use matchmaker::shared::worker::service::TaskContext;
 
-//todo: memory kisminda redis kaldiracagiz!
+//todo: mail kismindaki hata giderilicek
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     Environment::from_env()
@@ -22,11 +23,13 @@ async fn main() -> Result<(), Error> {
     info!("Logger initialized!");
     let db = DB::new().await?;
     info!("DB initialized!");
+    let cache = connect_redis().await;
+    info!("Redis initialized");
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
     let user_service = Arc::new(UserService::new(Arc::clone(&user_repository)));
     let mailer = EmailSender::new();
-    let task_context = TaskContext::new();
+    let task_context = TaskContext::new(cache, mailer);
     let app_state = Arc::new(AppState::new(user_service, task_context));
     let route = make_router(app_state);
     Server::bind().serve(route.into_make_service()).await?;

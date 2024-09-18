@@ -37,50 +37,32 @@ pub struct Deliveries {
 }
 
 impl EmailSender {
-    pub fn new() -> Result<Self, EmailSenderError> {
+    pub fn new() -> Option<Self> {
         let config = Config::get();
-        let mailer = config
-            .clone()
-            .mailer
-            .ok_or_else(|| {
-                EmailSenderError::ConfigError("Missing mailer configuration".to_string())
-            })?
-            .smtp
-            .ok_or_else(|| {
-                EmailSenderError::ConfigError("Missing SMTP configuration".to_string())
-            })?;
-        let use_smtp = mailer.enable;
-        if use_smtp {
-            let mailer = config
-                .clone()
-                .mailer
-                .ok_or_else(|| {
-                    EmailSenderError::ConfigError("Missing mailer configuration".to_string())
-                })?
-                .smtp
-                .ok_or_else(|| {
-                    EmailSenderError::ConfigError("Missing SMTP configuration".to_string())
-                })?;
 
+        let mailer_config = config.clone().mailer?.smtp?;
+
+        if mailer_config.enable {
             let mut email_builder =
-                lettre::AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&mailer.host)
-                    .port(mailer.port);
+                lettre::AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(
+                    &mailer_config.host,
+                )
+                .port(mailer_config.port);
 
-            if let Some(auth) = mailer.auth.as_ref() {
+            if let Some(auth) = mailer_config.auth.as_ref() {
                 email_builder = email_builder
                     .credentials(Credentials::new(auth.user.clone(), auth.password.clone()));
             }
 
-            Ok(Self {
+            Some(Self {
                 transport: EmailTransport::Smtp(email_builder.build()),
             })
         } else {
-            Ok(Self {
+            Some(Self {
                 transport: EmailTransport::Test(lettre::transport::stub::StubTransport::new_ok()),
             })
         }
     }
-
     pub fn smtp() -> Result<Self, EmailSenderError> {
         let config = Config::get();
         let mailer = config

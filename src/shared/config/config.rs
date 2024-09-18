@@ -23,7 +23,7 @@ pub struct Config {
     pub logger: Logger,
     pub server: Server,
     pub database: Database,
-    pub queue: Redis,
+    pub queue: Option<Redis>,
     pub auth: Auth,
     #[serde(default)]
     pub workers: Workers,
@@ -509,7 +509,7 @@ pub struct MailerAuth {
 static CONFIG: OnceLock<Config> = OnceLock::new();
 impl Config {
     pub fn new(env: &Environment) -> Result<Self, ConfigError> {
-        let config = Self::from_folder(env, Path::new("default_folder"))?;
+        let config = Self::from_folder(env, DEFAULT_FOLDER.as_path())?;
         CONFIG
             .set(config.clone())
             .map_err(|_| ConfigError::SettingsAlreadyInitialized)?;
