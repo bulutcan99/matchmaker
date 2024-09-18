@@ -25,7 +25,7 @@ pub struct UserLoginRequest {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserLoginResponse {
-    pub user_id: Uuid,
+    pub token: String,
 }
 
 impl<E> From<LoginError> for ApiResponseData<E>
@@ -94,7 +94,7 @@ where
     let result = app.user_service.login(&login_user).await;
 
     match result {
-        Ok(user_id) => match set_token_cookie(&cookies, &login_user.email, user_id) {
+        Ok(user) => match set_token_cookie(&cookies, &login_user.email, user.id.unwrap()) {
             Ok(()) => {
                 let res = UserLoginResponse { user_id };
                 Ok(ApiResponseData::success_with_data(res, StatusCode::OK))

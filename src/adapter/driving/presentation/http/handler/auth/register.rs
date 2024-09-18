@@ -13,6 +13,7 @@ use crate::adapter::driving::presentation::http::response::response::{
 };
 use crate::adapter::driving::presentation::http::router::AppState;
 use crate::core::application::usecase::auth::error::RegisterError;
+use crate::core::domain::valueobject::date::Timestamp;
 use crate::core::port::user::UserManagement;
 use crate::shared::worker::mailer::auth::service::AuthMailer;
 
@@ -49,6 +50,13 @@ pub struct UserRegisterRequest {
 #[derive(Serialize, Debug)]
 pub struct UserRegisterResponse {
     pub user_id: Uuid,
+    pub name: String,
+    pub surname: String,
+    pub email: String,
+    pub role: String,
+    pub password: String,
+    pub created_at: Timestamp,
+    pub updated_at: Timestamp,
 }
 
 impl From<RegisterError<ValidationErrors>> for ApiResponseData<ResponseError> {
@@ -92,7 +100,15 @@ where
 
             let res = UserRegisterResponse {
                 user_id: registered_user.id.unwrap(),
+                name: registered_user.name,
+                surname: registered_user.surname,
+                email: registered_user.email,
+                role: registered_user.role.as_string(),
+                password: register_user.password.clone(),
+                created_at: registered_user.created_at,
+                updated_at: registered_user.updated_at,
             };
+
             Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
         }
         Err(error) => Err(ApiResponseData::from(error)),

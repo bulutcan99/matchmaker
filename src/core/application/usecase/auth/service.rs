@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use uuid::Uuid;
 use validator::ValidationErrors;
 
 use crate::adapter::driving::presentation::http::handler::auth::login::UserLoginRequest;
@@ -64,7 +63,7 @@ where
         Ok(registered_user)
     }
 
-    async fn login(&self, input: &UserLoginRequest) -> Result<Uuid, LoginError> {
+    async fn login(&self, input: &UserLoginRequest) -> Result<User, LoginError> {
         let found_user = self
             .user_repository
             .find_by_email(input.email.as_str())

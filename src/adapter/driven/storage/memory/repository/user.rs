@@ -23,18 +23,17 @@ impl UserRepository {
 
 #[async_trait]
 impl UserRepo for UserRepository {
-    async fn save(&self, user: &User) -> Result<Uuid, Error> {
+    async fn save(&self, user: &User) -> Result<User, Error> {
         let mut counter = self.id_counter.lock().await;
         let mut owned_user = user.clone();
 
         *counter += 1;
 
-        let new_id = Uuid::new_v4();
-        owned_user.id = Some(new_id);
+        self.cache
+            .add(owned_user.id.unwrap(), owned_user.clone())
+            .await;
 
-        self.cache.add(new_id, owned_user.clone()).await;
-
-        Ok(new_id)
+        Ok(owned_user)
     }
 
     async fn update(&self, id_str: &str, entity: &User) -> Result<User, Error> {
