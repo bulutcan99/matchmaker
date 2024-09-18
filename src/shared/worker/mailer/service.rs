@@ -3,6 +3,7 @@ use crate::shared::worker::mailer::template::Template;
 use crate::shared::worker::service::{AppWorker, TaskContext};
 use async_trait::async_trait;
 use include_dir::Dir;
+use serde::de::Error;
 use serde_derive::{Deserialize, Serialize};
 use sidekiq::Worker;
 
@@ -51,6 +52,13 @@ pub struct MailerOpts {
 
 #[async_trait]
 pub trait Mailer {
+    #[must_use]
+    fn opts() -> MailerOpts {
+        MailerOpts {
+            from: DEFAULT_FROM_SENDER.to_string(),
+            ..Default::default()
+        }
+    }
     /// Sends an email using the provided [`TaskContext`] and email details.
     async fn mail(ctx: &TaskContext, email: &Email) -> Result<(), MailerError> {
         let opts = Self::opts();
@@ -111,17 +119,15 @@ impl AppWorker<Email> for MailerWorker {
 
 #[async_trait]
 impl Worker<Email> for MailerWorker {
-    async fn perform(&self, email: Email) -> Result<(), MailerError> {
+    async fn perform(&self, email: Email) -> Result<(), sidekiq::Error> {
         if let Some(mailer) = &self.ctx.mailer {
             mailer
                 .mail(&email)
                 .await
-                .map_err(|e| sidekiq::Error::Message(e.to_string()))?;
+                .map_err(|e| MailerError::SendEmailError(e.to_string()))?;
             Ok(())
         } else {
-            Err(sidekiq::Error::Message(
-                MailerError::NoMailerConfigured.to_string(),
-            ))
+            Err(MailerError::NoMailerConfigured.into())
         }
     }
 }

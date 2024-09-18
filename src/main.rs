@@ -9,7 +9,10 @@ use matchmaker::adapter::driving::presentation::http::server::Server;
 use matchmaker::core::application::usecase::auth::service::UserService;
 use matchmaker::shared::config::environment::Environment;
 use matchmaker::shared::logger::logger;
+use matchmaker::shared::worker::mailer::email_sender::EmailSender;
+use matchmaker::shared::worker::service::TaskContext;
 
+//todo: memory kisminda redis kaldiracagiz!
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     Environment::from_env()
@@ -22,7 +25,9 @@ async fn main() -> Result<(), Error> {
     let user_repository = Arc::new(UserRepository::new(Arc::clone(&db.pool)));
     // let company_repository = CompanyRepository::new(Arc::clone(&db.pool));
     let user_service = Arc::new(UserService::new(Arc::clone(&user_repository)));
-    let app_state = Arc::new(AppState::new(user_service));
+    let mailer = EmailSender::new();
+    let task_context = TaskContext::new();
+    let app_state = Arc::new(AppState::new(user_service, task_context));
     let route = make_router(app_state);
     Server::bind().serve(route.into_make_service()).await?;
     Ok(())

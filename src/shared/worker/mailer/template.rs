@@ -15,7 +15,7 @@
 //! ```
 
 use crate::shared::data;
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 use include_dir::Dir;
 
 /// The filename for the subject template file.
@@ -27,7 +27,7 @@ const TEXT: &str = "text.t";
 
 /// Reads an embedded file from the provided directory and returns its content
 /// as a string.
-fn embedded_file(dir: &Dir<'_>, name: &str) -> Result<String> {
+fn embedded_file(dir: &Dir<'_>, name: &str) -> Result<String, Error> {
     let file = dir
         .get_file(name)
         .ok_or_else(|| anyhow!(format!("no mailer template file found {name}")))?;
@@ -58,7 +58,7 @@ impl<'a> Template<'a> {
 
     /// Renders the email content based on the provided locals using the
     /// embedded templates.
-    pub fn render(&self, locals: &serde_json::Value) -> Result<Content> {
+    pub fn render(&self, locals: &serde_json::Value) -> Result<Content, Error> {
         let subject_t = embedded_file(self.dir, SUBJECT)?;
         let text_t = embedded_file(self.dir, TEXT)?;
         let html_t = embedded_file(self.dir, HTML)?;

@@ -60,7 +60,7 @@ impl From<ExtError> for ApiResponseData<ResponseError> {
 }
 
 pub async fn me_handler<S>(
-    State(state): State<Arc<AppState<S>>>,
+    State(_state): State<Arc<AppState<S>>>,
     Extension(user): Extension<User>,
 ) -> ApiResponse<UserMeResponse, ResponseError>
 where

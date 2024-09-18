@@ -6,7 +6,6 @@ use http::StatusCode;
 use serde::Serialize;
 use serde_derive::Deserialize;
 use tower_cookies::Cookies;
-use uuid::Uuid;
 
 use crate::adapter::driving::presentation::http::middleware::cookie::set_token_cookie;
 use crate::adapter::driving::presentation::http::response::field_error::ResponseError;
@@ -95,10 +94,7 @@ where
 
     match result {
         Ok(user) => match set_token_cookie(&cookies, &login_user.email, user.id.unwrap()) {
-            Ok(()) => {
-                let res = UserLoginResponse { user_id };
-                Ok(ApiResponseData::success_with_data(res, StatusCode::OK))
-            }
+            Ok(()) => Ok(ApiResponseData::status_code(StatusCode::OK)),
             Err(error) => Err(ApiResponseData::from(error)),
         },
         Err(error) => Err(ApiResponseData::from(error)),

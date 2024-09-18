@@ -76,7 +76,7 @@ where
         };
 
         match found_user.password_hash.verify_password(&input.password) {
-            Ok(true) => Ok(found_user.id.unwrap()),
+            Ok(true) => Ok(found_user),
             Ok(false) => Err(LoginError::BadCredentials),
             Err(_) => Err(LoginError::JWTEncodingError),
         }

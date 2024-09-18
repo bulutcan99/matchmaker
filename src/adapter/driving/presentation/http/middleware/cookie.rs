@@ -11,6 +11,7 @@ pub fn set_token_cookie(cookies: &Cookies, user: &str, salt: Uuid) -> Result<(),
     let mut cookie = Cookie::new(AUTH_TOKEN, token.to_string());
     cookie.set_http_only(true);
     cookie.set_path("/");
+    cookie.set_max_age(time::Duration::seconds(604800));
 
     cookies.add(cookie);
 

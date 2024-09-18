@@ -1,18 +1,14 @@
+use crate::shared::config::environment::Environment;
+use crate::shared::config::error::ConfigError;
+use crate::shared::data;
+use crate::shared::logger::logger;
+use lazy_static::lazy_static;
+use serde::Deserialize;
+use serde_derive::Serialize;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
-
-use anyhow::anyhow;
-use lazy_static::lazy_static;
-use serde::Deserialize;
-use serde_derive::Serialize;
-use serde_json::json;
-use tera::{Context, Tera};
-use tracing::info;
-
-use crate::shared::config::environment::Environment;
-use crate::shared::logger::logger;
 
 lazy_static! {
     static ref DEFAULT_FOLDER: PathBuf = PathBuf::from("config");
@@ -511,22 +507,19 @@ pub struct MailerAuth {
 }
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
-
 impl Config {
-    pub fn new(env: &Environment) -> Result<Self> {
-        let config = Self::from_folder(env, DEFAULT_FOLDER.as_path())?;
+    pub fn new(env: &Environment) -> Result<Self, ConfigError> {
+        let config = Self::from_folder(env, Path::new("default_folder"))?;
         CONFIG
             .set(config.clone())
-            .map_err(|_| anyhow!("Settings already initialized"))?;
+            .map_err(|_| ConfigError::SettingsAlreadyInitialized)?;
         Ok(config)
     }
 
     pub fn get() -> &'static Config {
         CONFIG.get().expect("SETTINGS has not been initialized!")
     }
-
-    pub fn from_folder(env: &Environment, path: &Path) -> Result<Self> {
-        // by order of precedence
+    pub fn from_folder(env: &Environment, path: &Path) -> Result<Self, ConfigError> {
         let files = [
             path.join(format!("{env}.local.yaml")),
             path.join(format!("{env}.yaml")),
@@ -535,18 +528,13 @@ impl Config {
         let selected_path = files
             .iter()
             .find(|p| p.exists())
-            .ok_or_else(|| anyhow!("no configuration file found".to_string()))?;
+            .ok_or(ConfigError::NoConfigFileFound)?;
 
-        info!(selected_path =? selected_path, "loading environment from");
+        let content = fs::read_to_string(selected_path)
+            .map_err(|e| ConfigError::FileReadError(e.to_string()))?;
+        let rendered = data::render_string(&content, &serde_json::json!({}))
+            .map_err(|e| ConfigError::TemplateRenderError(e.to_string()))?;
 
-        let content = fs::read_to_string(selected_path)?;
-        let rendered = render_string(&content, &json!({}))?;
-
-        serde_yaml::from_str(&rendered).map_err(|err| anyhow!("{}", err))
+        serde_yaml::from_str(&rendered).map_err(|e| ConfigError::YamlParseError(e.to_string()))
     }
-}
-
-pub fn render_string(tera_template: &str, locals: &serde_json::Value) -> Result<String> {
-    let text = Tera::one_off(tera_template, &Context::from_serialize(locals)?, false)?;
-    Ok(text)
 }

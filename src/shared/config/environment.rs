@@ -1,11 +1,11 @@
 use std::env;
 use std::str::FromStr;
 
+use super::config::Config;
+use crate::shared::config::error::ConfigError;
 use dotenvy::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
-
-use super::config::Config;
 
 pub const DEFAULT_ENVIRONMENT: &str = "development";
 
@@ -33,7 +33,7 @@ impl Environment {
         Self::from(env_var)
     }
 
-    pub fn load(&self) -> Result<Config> {
+    pub fn load(&self) -> Result<Config, ConfigError> {
         Config::new(self)
     }
 }

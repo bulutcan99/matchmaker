@@ -126,8 +126,8 @@ fn _token_sign_into_b64u(
     let content = format!("{}.{}", b64u_encode(ident), b64u_encode(exp));
 
     // -- Create a HMAC-SHA-512 from key.
-    let mut hmac_sha512 =
-        Hmac::<Sha512>::new_from_slice(key.as_ref()).map_err(TokenError::HmacFailNewFromSlice);
+    let mut hmac_sha512 = Hmac::<Sha512>::new_from_slice(key.as_ref())
+        .map_err(|_| TokenError::HmacFailNewFromSlice)?; // `?` operatörünü kullanarak hatayı ele al
 
     // -- Add content.
     hmac_sha512.update(content.as_bytes());

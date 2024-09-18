@@ -3,6 +3,7 @@
 //! sending emails with options like sender, recipient, subject, and content.
 
 use crate::shared::config::config::Config;
+use crate::shared::worker::mailer::error::EmailSenderError;
 use crate::shared::worker::mailer::service::{Email, DEFAULT_FROM_SENDER};
 use anyhow::anyhow;
 use lettre::message::MultiPart;
@@ -36,9 +37,62 @@ pub struct Deliveries {
 }
 
 impl EmailSender {
-    pub fn smtp() -> Result<Self> {
+    pub fn new() -> Result<Self, EmailSenderError> {
         let config = Config::get();
-        let mailer = config.clone().mailer.unwrap().smtp.unwrap();
+        let mailer = config
+            .clone()
+            .mailer
+            .ok_or_else(|| {
+                EmailSenderError::ConfigError("Missing mailer configuration".to_string())
+            })?
+            .smtp
+            .ok_or_else(|| {
+                EmailSenderError::ConfigError("Missing SMTP configuration".to_string())
+            })?;
+        let use_smtp = mailer.enable;
+        if use_smtp {
+            let mailer = config
+                .clone()
+                .mailer
+                .ok_or_else(|| {
+                    EmailSenderError::ConfigError("Missing mailer configuration".to_string())
+                })?
+                .smtp
+                .ok_or_else(|| {
+                    EmailSenderError::ConfigError("Missing SMTP configuration".to_string())
+                })?;
+
+            let mut email_builder =
+                lettre::AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&mailer.host)
+                    .port(mailer.port);
+
+            if let Some(auth) = mailer.auth.as_ref() {
+                email_builder = email_builder
+                    .credentials(Credentials::new(auth.user.clone(), auth.password.clone()));
+            }
+
+            Ok(Self {
+                transport: EmailTransport::Smtp(email_builder.build()),
+            })
+        } else {
+            Ok(Self {
+                transport: EmailTransport::Test(lettre::transport::stub::StubTransport::new_ok()),
+            })
+        }
+    }
+
+    pub fn smtp() -> Result<Self, EmailSenderError> {
+        let config = Config::get();
+        let mailer = config
+            .clone()
+            .mailer
+            .ok_or_else(|| {
+                EmailSenderError::ConfigError("Missing mailer configuration".to_string())
+            })?
+            .smtp
+            .ok_or_else(|| {
+                EmailSenderError::ConfigError("Missing SMTP configuration".to_string())
+            })?;
 
         let mut email_builder =
             lettre::AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&mailer.host)
@@ -71,12 +125,7 @@ impl EmailSender {
         Deliveries::default()
     }
 
-    /// Sends an email using the configured transport method.
-    ///
-    /// # Errors
-    ///
-    /// When email did't send successfully or has an error to build the message
-    pub async fn mail(&self, email: &Email) -> Result<()> {
+    pub async fn mail(&self, email: &Email) -> Result<(), EmailSenderError> {
         let content = MultiPart::alternative_plain_html(email.text.clone(), email.html.clone());
         let mut builder = Message::builder()
             .from(
@@ -105,15 +154,19 @@ impl EmailSender {
             .multipart(content)
             .map_err(|error| {
                 tracing::error!(err.msg = %error, err.detail = ?error, "email_building_error");
-                anyhow!("error building email message")
+                EmailSenderError::EmailBuildError("Error building email message".to_string())
             })?;
 
         match &self.transport {
             EmailTransport::Smtp(xp) => {
-                xp.send(msg).await?;
+                xp.send(msg)
+                    .await
+                    .map_err(|err| EmailSenderError::EmailSendError(err.to_string()))?;
             }
             EmailTransport::Test(xp) => {
-                xp.send(&msg).map_err(|_| anyhow!("sending email error"))?;
+                xp.send(&msg).map_err(|_| {
+                    EmailSenderError::TestTransportSendError("Sending email error".to_string())
+                })?;
             }
         };
         Ok(())
