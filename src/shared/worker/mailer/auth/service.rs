@@ -36,7 +36,6 @@ impl AuthMailer {
         )
         .await
         .map_err(|_| AuthMailerError::SendWelcomeError(user.email.to_string()))?;
-
         Ok(())
     }
 

@@ -93,7 +93,6 @@ where
     let result = app.user_service.register(&register_user).await;
     match result {
         Ok(registered_user) => {
-            let user_email = register_user.email.clone();
             AuthMailer::send_welcome(&app.task_context, &registered_user)
                 .await
                 .map_err(|e| RegisterError::InternalError)?;

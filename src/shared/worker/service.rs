@@ -40,7 +40,6 @@ where
                     error!(
                         error.msg =
                             "Worker mode requested but no queue connection supplied, skipping job",
-                        "worker_error"
                     );
                 }
             }
@@ -49,9 +48,9 @@ where
             }
             WorkerMode::BackgroundAsync => {
                 let ctx_clone = ctx.clone();
-                async_std::task::spawn(async move {
+                tokio::spawn(async move {
                     if let Err(e) = Self::build(&ctx_clone).perform(args).await {
-                        anyhow!("Error performing task: {:?}", e);
+                        anyhow!("Error performing task due to: {:?}", e);
                     }
                 });
             }
